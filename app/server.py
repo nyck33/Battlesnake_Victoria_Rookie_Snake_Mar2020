@@ -88,16 +88,17 @@ def move():
     # list in order of nearest to furthest food
     food_arr = []
     get_food = False
-    for z in range(len(food)):
-        food_dist = heuristic((my_head_y, my_head_x),
-                              (food[z]['y'],food[z]['x']))
-        # dont' go for food further than width away
-        if food_dist > width/2:
-            continue
-        food_arr.append([food_dist, food[z]['y'], food[z]['x']])
-        get_food=True
-    food_arr = sorted(food_arr, key=lambda x: x[0])
-    print(f'nearest food {food_arr[0]}')
+    if len(food)>0:
+        for z in range(len(food)):
+            food_dist = heuristic((my_head_y, my_head_x),
+                                  (food[z]['y'],food[z]['x']))
+            # dont' go for food further than width away
+            if food_dist > width/2:
+                continue
+            food_arr.append([food_dist, food[z]['y'], food[z]['x']])
+            get_food=True
+        food_arr = sorted(food_arr, key=lambda x: x[0])
+        print(f'nearest food {food_arr[0]}')
 
     # get list of snakes and make snakes_grid
     # my snake is 3 (head), 4 (body), opponents are 0,0 for smaller snake,
@@ -108,7 +109,6 @@ def move():
     # vals for larger or equal size opponents
     head_val = 5
     body_val = 6
-
 
     for j in range(len(snakes)):
         curr_snake = snakes[j]
@@ -231,7 +231,7 @@ def move():
                         path_found=True
                 break
     # if food A-star had no path or no food within reach to begin with
-    if not path_found:
+    if not path_found or not get_food:
         # chase tail if nothing in food_arr
         goal_y = snakes[0]['body'][-1]['y']
         goal_x = snakes[0]['body'][-1]['x']

@@ -87,17 +87,17 @@ def move():
     food = data['board']['food']
     # list in order of nearest to furthest food
     food_arr = []
+    get_food = False
     for z in range(len(food)):
         food_dist = heuristic((my_head_y, my_head_x),
                               (food[z]['y'],food[z]['x']))
-        #if food_dist > width:
-         #   continue
-
+        # dont' go for food further than width away
+        if food_dist > width/2:
+            continue
         food_arr.append([food_dist, food[z]['y'], food[z]['x']])
-
+        get_food=True
     food_arr = sorted(food_arr, key=lambda x: x[0])
     print(f'nearest food {food_arr[0]}')
-
 
     # get list of snakes and make snakes_grid
     # my snake is 3 (head), 4 (body), opponents are 0,0 for smaller snake,
@@ -108,6 +108,7 @@ def move():
     # vals for larger or equal size opponents
     head_val = 5
     body_val = 6
+
 
     for j in range(len(snakes)):
         curr_snake = snakes[j]
@@ -156,9 +157,9 @@ def move():
     cost = 1
     first_move = 0
     move = ''
-    # there is a food so A star for route with snake grid
-    if len(food_arr) > 0:
-
+    path_found=False
+    # there is a food so A star for route to food using snake grid for g
+    if get_food:
         for q in range(len(food_arr)):
             # goal y and x
             goal_y = food_arr[q][1]
@@ -224,12 +225,14 @@ def move():
                     #if expand is "1" and in bounds
                     if 0 <= next_y < expand.shape[0] and \
                             0 <= next_x < expand.shape[1] and \
-                            expand[next_y, next_x] == 1:
+                            expand[next_y, next_x]!=-1:
                         print(f'expand\n {expand}')
                         move = delta_name[i]
+                        path_found=True
                 break
-    # chase tail if nothing in food_arr
-    else:
+    # if food A-star had no path or no food within reach to begin with
+    if not path_found:
+        # chase tail if nothing in food_arr
         goal_y = snakes[0]['body'][-1]['y']
         goal_x = snakes[0]['body'][-1]['x']
         # visited array
@@ -291,7 +294,7 @@ def move():
                 next_x = my_head_x + delta[i][1]
                 if 0 <= next_y < expand.shape[0] and \
                         0 <= next_x < expand.shape[1] and \
-                        expand[next_y, next_x]==1:
+                        expand[next_y, next_x]!=-1:
                     print(f'expand\n {expand}')
                     move = delta_name[i]
 

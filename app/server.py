@@ -209,7 +209,7 @@ def move():
                                 # if unvisited and traversible
                                 if closed[new_y,new_x] ==0 and \
                                         snakes_grid[new_y,new_x]==0:
-                                    # the first move is where we are going
+                                    # todo: the first move is where we are going
                                     if count == 1:
                                         first_move = i
                                     g2 = g + cost
@@ -218,7 +218,9 @@ def move():
                                     closed[new_y,new_x]=1
             # found goal or resigned
             if not resign:
-                # find next move, how to get to "1" in expand
+                path_found = True
+                # find next move, how to get to any non -1 in expand
+                # but also 2 deep
                 for i in range(len(delta)):
                     next_y = my_head_y + delta[i][0]
                     next_x = my_head_x + delta[i][1]
@@ -226,11 +228,18 @@ def move():
                     if 0 <= next_y < expand.shape[0] and \
                             0 <= next_x < expand.shape[1] and \
                             expand[next_y, next_x]!=-1:
-                        print(f'expand\n {expand}')
-                        move = delta_name[i]
-                        path_found=True
+                        for j in range(len(delta)):
+                            n_next_y = next_y + delta[j][0]
+                            n_next_x = next_x + delta[j][1]
+                            if 0 <= n_next_y < expand.shape[0] and \
+                                    0 <= n_next_x < expand.shape[1] and \
+                                    expand[n_next_y, n_next_x] != -1:
+                                print(f'expand\n {expand}')
+                                move = delta_name[i]
+                # found path so break
                 break
     # if food A-star had no path or no food within reach to begin with
+    # so chase tail
     if not path_found or not get_food:
         # chase tail if nothing in food_arr
         goal_y = snakes[0]['body'][-1]['y']
@@ -251,7 +260,7 @@ def move():
         found = False  # set when search complete
         resign = False  # set when can't expand
         count = 0
-        # only need to return the next move? or calculate entire path?
+        # calculate entire path but only use first move
         while not found and not resign:
             if len(open_arr) == 0:
                 resign = True
@@ -279,7 +288,7 @@ def move():
                             # if unvisited and traversible
                             if closed[new_y,new_x] == 0 and \
                                     snakes_grid[new_y,new_x] == 0:
-                                # the first move is where we are going
+                                # todo: the first move is where we are going
                                 if count == 1:
                                     first_move = i
                                 g2 = g + cost
@@ -288,19 +297,35 @@ def move():
                                 closed[new_y][new_x] = 1
         # found goal or resigned
         if not resign:
-            # find next move, how to get to "1" in expand
+            path_found = True
+            # find next move, how to get to spot that's not -1 in expand
+            # but choose a spot that has continuation, not just an explored one
             for i in range(len(delta)):
                 next_y = my_head_y + delta[i][0]
                 next_x = my_head_x + delta[i][1]
                 if 0 <= next_y < expand.shape[0] and \
                         0 <= next_x < expand.shape[1] and \
                         expand[next_y, next_x]!=-1:
-                    print(f'expand\n {expand}')
-                    move = delta_name[i]
+                    for j in range(len(delta)):
+                        n_next_y = next_y + delta[j][0]
+                        n_next_x = next_x + delta[j][1]
+                        if 0 <= n_next_y < expand.shape[0] and \
+                            0 <= n_next_x < expand.shape[1] and \
+                            expand[n_next_y, n_next_x] != -1:
+                            print(f'expand\n {expand}')
+                            move = delta_name[i]
 
     # pretty print
     #print(f"move_data:\n{json.dumps(data, indent=2)}")
 
+    #chasing tail nor search for food worked so random?
+    if not path_found:
+        for t in range(len(delta)):
+            next_y = my_head_y + delta[t][0]
+            next_x = my_head_x + delta[t][1]
+            if 0 <= next_y < snakes_grid.shape[0] and \
+                    0 <= next_x < snakes_grid.shape[1]:
+                move = delta_name[t]
     # Choose a random direction to move in
     #directions = ["up", "down", "left", "right"]
 
@@ -309,7 +334,7 @@ def move():
     # Shouts are messages sent to all the other snakes in the game.
     # Shouts are not displayed on the game board.
     shout = "Kurae!"
-    print(f'move: {move}')
+    #print(f'move: {move}')
     response = {"move": move, "shout": shout}
     return HTTPResponse(
         status=200,

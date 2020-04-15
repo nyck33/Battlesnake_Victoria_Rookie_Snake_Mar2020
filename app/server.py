@@ -116,6 +116,8 @@ def move():
                                       + delta[i][0]
                         next_head_x = curr_snake['body'][k]['x'] \
                                       + delta[i][1]
+                        snakes_grid[next_head_y, next_head_x] = head_val
+                    '''
                         # if in bounds and not its own body
                         if 0 <= next_head_y < snakes_grid.shape[0] \
                                 and 0 <= next_head_x < snakes.grid.shape[1]\
@@ -125,6 +127,7 @@ def move():
                     # random choice on candidates
                     next_head = random.choice(next_head_candidates)
                     snakes_grid[next_head[0], next_head[1]] = head_val
+                    '''
             # opponent's body
             elif j != 0:
                 snakes_grid[curr_snake['body'][k]['y'],
@@ -140,7 +143,7 @@ def move():
             # my body, can't hit it anyways
             elif j == 0:
                 snakes_grid[curr_snake['body'][k]['y'],
-                            curr_snake['body'][k]['x']] = body_val
+                            curr_snake['body'][k]['x']] = 4
 
         # set them to default larger or equal to me
         head_val = 5
@@ -160,7 +163,7 @@ def move():
                                   (food[z]['y'],food[z]['x']))
             # dont' go for food further than width away
             #todo: 0.7 is param
-            if food_dist > width*0.5:
+            if food_dist > width * 1.0:
                 continue
             food_arr.append([food_dist, food[z]['y'], food[z]['x']])
             get_food=True

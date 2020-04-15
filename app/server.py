@@ -44,6 +44,7 @@ def move():
     The data parameter will contain information about the board.
     Your response must include your my_move of up, down, left, or right.
     """
+    '''
     def heuristic(start_node, goal_node):
         start_x = start_node[1]
         start_y = start_node[0]
@@ -64,7 +65,7 @@ def move():
                 heuristic_map[i, j] = dy + dx
 
         return heuristic_map
-
+    '''
     # my_moves
     delta = [[-1, 0],  # go up
              [0, -1],  # go left
@@ -80,15 +81,16 @@ def move():
     # my head
     # my head and body locations
     snakes = data['board']['snakes']
-    my_head_x = snakes[0]['body'][0]['x']
-    my_head_y = snakes[0]['body'][0]['y']
+    my_head_x = data['you']['body'][0]['x']
+    my_head_y = data['you']['body'][0]['y']
+    my_id = data['you']['id']
 
     # get list of snakes and make snakes_grid
     # my snake is 3 (head), 4 (body), opponents are 0,0 for smaller snake,
     # 5,6 for larger snake
     snakes_grid = np.zeros((width, height), dtype=np.int)
     # for comparison with opponent's snakes
-    my_body_len = len(snakes[0]['body'])
+    my_body_len = len(data['you']['body'])
     # vals for larger or equal size opponents
     head_val = 5
     body_val = 6
@@ -99,57 +101,41 @@ def move():
 
     for j in range(len(snakes)):
         curr_snake = snakes[j]
-        # iterate to last since tail is gone next my_move
+        # iterate to last since tail is gone next move
         for k in range(0, len(curr_snake['body']) - 1, 1):
-            # if opponent bigger than or equal to me avoid
-            if j != 0 and len(curr_snake['body']) >= my_body_len:
-                head_val = 5
-                body_val = 6
-                # head of opponent
-                if k == 0:
-                    snakes_grid[curr_snake['body'][k]['y'],
-                                curr_snake['body'][k]['x']] = head_val
-                    # todo: pick one not mark the 4 connected
+            head_val = 5
+            body_val = 6
+            # head of all snakes including me
+            if k == 0:
+                snakes_grid[curr_snake['body'][k]['y'],
+                            curr_snake['body'][k]['x']] = head_val
+                # todo: pick 1/4 connected for next_head?
+                #if snake is not me and equal or bigger,  next heads are marked
+                if len(curr_snake['body']) >= my_body_len and \
+                        curr_snake['id'] != my_id:
                     next_head_candidates = []
-                    for i in range(len(delta)):
+                    for s in range(len(delta)):
                         next_head_y = curr_snake['body'][k]['y'] \
-                                      + delta[i][0]
+                                      + delta[s][0]
                         next_head_x = curr_snake['body'][k]['x'] \
-                                      + delta[i][1]
-                        snakes_grid[next_head_y, next_head_x] = head_val
-                    '''
+                                      + delta[s][1]
                         # if in bounds and not its own body
                         if 0 <= next_head_y < snakes_grid.shape[0] \
                                 and 0 <= next_head_x < snakes.grid.shape[1]\
                                 and snakes_grid[next_head_y, next_head_x]==0:
-                            next_head_candidates.append([next_head_y,
-                                                         next_head_x])
+                            snakes_grid[next_head_y, next_head_x] = head_val
+                            #next_head_candidates.append([next_head_y,next_head_x])
                     # random choice on candidates
-                    next_head = random.choice(next_head_candidates)
-                    snakes_grid[next_head[0], next_head[1]] = head_val
-                    '''
-            # opponent's body
-            elif j != 0:
+                    #next_head = random.choice(next_head_candidates)
+                    #snakes_grid[next_head[0], next_head[1]] = head_val
+
+            # snakes body
+            else:
                 snakes_grid[curr_snake['body'][k]['y'],
                             curr_snake['body'][k]['x']] = body_val
 
-            # if opponent smaller than me, don't care so leave as 0
-            elif j != 0 and len(curr_snake['body']) < my_body_len:
-                break
-            # if it's my head
-            elif j == 0 and k == 0:
-                snakes_grid[curr_snake['body'][k]['y'],
-                            curr_snake['body'][k]['x']] = 3
-            # my body, can't hit it anyways
-            elif j == 0:
-                snakes_grid[curr_snake['body'][k]['y'],
-                            curr_snake['body'][k]['x']] = 4
-
-        # set them to default larger or equal to me
-        head_val = 5
-        body_val = 6
     #todo: hits own tail so include on snakes grid
-    snakes_grid[snakes[0]['body'][-1]['y'], snakes[0]['body'][-1]['y']] = 6
+    snakes_grid[data['you']['body'][-1]['y'], data['you']['body'][-1]['x']] = 3
 
     #list of dicts of food locations
     food = data['board']['food']
@@ -163,12 +149,11 @@ def move():
                                   (food[z]['y'],food[z]['x']))
             # dont' go for food further than width away
             #todo: 0.7 is param
-            if food_dist > width * 1.0:
-                continue
-            food_arr.append([food_dist, food[z]['y'], food[z]['x']])
-            get_food=True
+            if food_dist < width * 1.0:
+                food_arr.append([food_dist, food[z]['y'], food[z]['x']])
+                get_food=True
         food_arr = sorted(food_arr, key=lambda x: x[0])
-    #print(f'nearest food {food_arr[0]}')
+    print(f'\n\nfood arr {food_arr}\n\n')
 
     #print(f"snakes_grid\n {snakes_grid}")
     cost = 1
@@ -190,7 +175,7 @@ def move():
             g = 0 # each step is 1
             heuristic_map = make_heuristic_map((goal_y, goal_x),
                                                snakes_grid)
-            #print(f'heuristics map\n{heuristic_map}')
+
             f = g + heuristic_map[my_head_y, my_head_x]
 
             open_arr = [[f,g,my_head_y, my_head_x]]
@@ -236,14 +221,23 @@ def move():
             if found:
 
                 # find next my_move, how to get to any non -1 in expand
-                # but also 2 deep
+                # todo: but also 2 deep?
                 for i in range(len(delta)):
                     next_y = my_head_y + delta[i][0]
                     next_x = my_head_x + delta[i][1]
                     #if expand is "pos" and in bounds
                     if 0 <= next_y < expand.shape[0] and \
                             0 <= next_x < expand.shape[1] and \
-                            expand[next_y, next_x]>0:
+                            expand[next_y, next_x]==1:
+                        my_move = delta_name[i]
+                        path_found=True
+                        which_move='food'
+                        break
+            if path_found:
+                print(f'heuristics map\n{heuristic_map}')
+                break
+
+    '''
                         curr_spot = expand[next_y, next_x]
                         for j in range(len(delta)):
                             n_next_y = next_y + delta[j][0]
@@ -259,6 +253,8 @@ def move():
                     # found path so break
                     if path_found:
                         break
+    '''
+
     # if food A-star had no path or no food within reach to begin with
     # so chase tail
     if not path_found:
@@ -274,7 +270,7 @@ def move():
         g = 0  # each step is 1
         heuristic_map = make_heuristic_map([goal_y, goal_x],
                                            snakes_grid)
-        #print(f'heuristics_map\n{heuristic_map}')
+        print(f'heuristics_map\n{heuristic_map}')
         f = g + heuristic_map[my_head_y, my_head_x]
 
         open_arr = [[f, g, my_head_y, my_head_x]]
@@ -325,7 +321,13 @@ def move():
                 next_x = my_head_x + delta[i][1]
                 if 0 <= next_y < expand.shape[0] and \
                         0 <= next_x < expand.shape[1] and \
-                        expand[next_y, next_x]>0:
+                        expand[next_y, next_x]==1:
+                    my_move = delta_name[i]
+                    path_found = True
+                    which_move = 'tail'
+                    break
+
+                '''
                     curr_spot = expand[next_y, next_x]
                     for j in range(len(delta)):
                         n_next_y = next_y + delta[j][0]
@@ -340,7 +342,7 @@ def move():
                             break
                 if path_found:
                     break
-
+                '''
     # pretty print
     #print(f"my_move_data:\n{json.dumps(data, indent=2)}")
 
@@ -375,7 +377,7 @@ def move():
     # Shouts are not displayed on the game board.
     shout = "tssss!"
     turn = data['turn']
-    #print(f'\n\nturn: {turn}\nmy_move: {my_move}\n which_move: {which_move}\n\n')
+    print(f'\n\nturn: {turn}\nmy_move: {my_move}\n which_move: {which_move}\n\n')
     response = {"move": my_move, "shout": shout}
     return HTTPResponse(
         status=200,

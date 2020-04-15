@@ -105,7 +105,7 @@ def move():
             if j != 0 and len(curr_snake['body']) >= my_body_len:
                 head_val = 5
                 body_val = 6
-                # if head
+                # if head of opponent
                 if k == 0:
                     snakes_grid[curr_snake['body'][k]['y'],
                                 curr_snake['body'][k]['x']] = head_val
@@ -344,12 +344,21 @@ def move():
                     0 <= next_x < snakes_grid.shape[1] and \
                     snakes_grid[next_y, next_x]==0:
                 my_move = delta_name[t]
-                which_move = 'last resort'
+                for v in range(len(delta)):
+                    n_next_y = next_y + delta[v][0]
+                    n_next_x = next_x + delta[v][1]
+                    if 0 <= n_next_y < snakes_grid.shape[0] and \
+                            0 <= n_next_x < snakes_grid.shape[1] and \
+                            snakes_grid[n_next_y,n_next_x]==0:
+                        my_move = delta_name[t]
+                        which_move = 'last resort'
+                        path_found=True
+                        break
+            if path_found:
                 break
-
     # Choose a random direction to my_move in
     #if not path_found:
-     #   directions = ["up", "down", "left", "right"]
+        #directions = ["up", "down", "left", "right"]
       #  my_move = random.choice(directions)
        # path_found=True
 

@@ -105,20 +105,26 @@ def move():
             if j != 0 and len(curr_snake['body']) >= my_body_len:
                 head_val = 5
                 body_val = 6
-                # if head of opponent
+                # head of opponent
                 if k == 0:
                     snakes_grid[curr_snake['body'][k]['y'],
                                 curr_snake['body'][k]['x']] = head_val
                     # todo: pick one not mark the 4 connected
+                    next_head_candidates = []
                     for i in range(len(delta)):
                         next_head_y = curr_snake['body'][k]['y'] \
                                       + delta[i][0]
                         next_head_x = curr_snake['body'][k]['x'] \
                                       + delta[i][1]
-                        # if in bounds
+                        # if in bounds and not its own body
                         if 0 <= next_head_y < snakes_grid.shape[0] \
-                                and 0 <= next_head_x < snakes.grid.shape[1]:
-                            snakes_grid[next_head_y, next_head_x] = head_val
+                                and 0 <= next_head_x < snakes.grid.shape[1]\
+                                and snakes_grid[next_head_y, next_head_x]==0:
+                            next_head_candidates.append([next_head_y,
+                                                         next_head_x])
+                    # random choice on candidates
+                    next_head = random.choice(next_head_candidates)
+                    snakes_grid[next_head[0], next_head[1]] = head_val
             # opponent's body
             elif j != 0:
                 snakes_grid[curr_snake['body'][k]['y'],
@@ -305,7 +311,7 @@ def move():
                                 g2 = g + cost
                                 f2 = g2 + heuristic_map[new_y,new_x]
                                 open_arr.append([f2, g2, new_y, new_x])
-                                closed[new_y][new_x] = 1
+                                closed[new_y,new_x] = 1
         # found goal or resigned
         if found:
 

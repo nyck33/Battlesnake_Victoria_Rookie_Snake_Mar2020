@@ -121,7 +121,7 @@ def move():
                                       + delta[s][1]
                         # if in bounds and not its own body
                         if 0 <= next_head_y < snakes_grid.shape[0] \
-                                and 0 <= next_head_x < snakes.grid.shape[1]\
+                                and 0 <= next_head_x < snakes_grid.shape[1]\
                                 and snakes_grid[next_head_y, next_head_x]==0:
                             snakes_grid[next_head_y, next_head_x] = head_val
                             #next_head_candidates.append([next_head_y,next_head_x])
@@ -141,17 +141,14 @@ def move():
     food = data['board']['food']
     # list in order of nearest to furthest food tuples (dist, y,x)
     food_arr = []
-    get_food = False
     #if there is food
     if len(food)>0:
         for z in range(len(food)):
             food_dist = heuristic((my_head_y, my_head_x),
                                   (food[z]['y'],food[z]['x']))
+            food_arr.append([food_dist, food[z]['y'], food[z]['x']])
             # dont' go for food further than width away
-            #todo: 0.7 is param
-            if food_dist < width * 1.0:
-                food_arr.append([food_dist, food[z]['y'], food[z]['x']])
-                get_food=True
+
         food_arr = sorted(food_arr, key=lambda x: x[0])
     print(f'\n\nfood arr {food_arr}\n\n')
 
@@ -161,81 +158,85 @@ def move():
 
     path_found=False
     # there is a food so A star for route to food using snake grid for g
-    if get_food:
+    count = 0
+    if not path_found:
         for q in range(len(food_arr)):
-            # goal y and x
-            goal_y = food_arr[q][1]
-            goal_x = food_arr[q][2]
-            # visited array
-            closed = np.zeros(snakes_grid.shape, dtype=np.int)
-            closed[my_head_y, my_head_x] = 1
-            # expand is final map returned with numbered spots
-            expand = np.full(snakes_grid.shape, -1, dtype=np.int)
+            # todo: only go after near food first
+            if food_arr[q][0] < width * 0.8:
+                count+=1
+                # goal y and x
+                goal_y = food_arr[q][1]
+                goal_x = food_arr[q][2]
+                # visited array
+                closed = np.zeros(snakes_grid.shape, dtype=np.int)
+                closed[my_head_y, my_head_x] = 1
+                # expand is final map returned with numbered spots
+                expand = np.full(snakes_grid.shape, -1, dtype=np.int)
 
-            g = 0 # each step is 1
-            heuristic_map = make_heuristic_map((goal_y, goal_x),
-                                               snakes_grid)
+                g = 0 # each step is 1
+                heuristic_map = make_heuristic_map((goal_y, goal_x),
+                                                   snakes_grid)
 
-            f = g + heuristic_map[my_head_y, my_head_x]
+                f = g + heuristic_map[my_head_y, my_head_x]
 
-            open_arr = [[f,g,my_head_y, my_head_x]]
-            found = False # set when search complete
-            resign = False # set when can't expand
-            count = 0
-            # only need to return the next my_move? or calculate entire path?
-            while not found and not resign:
-                if len(open_arr) == 0:
-                    resign = True
-                else:
-                    open_arr.sort()
-                    open_arr.reverse()
-                    next = open_arr.pop()
-                    y = next[2]
-                    x = next[3]
-                    g = next[1]
-
-                    f = g + heuristic_map[y, x]
-                    expand[y,x] = count
-                    count+=1
-
-                    if y == goal_y and x == goal_x:
-                        found = True
+                open_arr = [[f,g,my_head_y, my_head_x]]
+                found = False # set when search complete
+                resign = False # set when can't expand
+                count = 0
+                # only need to return the next my_move? or calculate entire path?
+                while not found and not resign:
+                    if len(open_arr) == 0:
+                        resign = True
                     else:
-                        for i in range(len(delta)):
-                            new_y = y + delta[i][0]
-                            new_x = x + delta[i][1]
+                        open_arr.sort()
+                        open_arr.reverse()
+                        next = open_arr.pop()
+                        y = next[2]
+                        x = next[3]
+                        g = next[1]
 
-                            # if in-bounds, also mark as head
-                            if 0 <= new_y < snakes_grid.shape[0] and \
-                                0 <= new_x < snakes_grid.shape[1]:
-                                # if unvisited and traversible
-                                if closed[new_y,new_x] ==0 and \
-                                        snakes_grid[new_y,new_x]==0:
-                                    # todo: the first my_move is where we are going
+                        f = g + heuristic_map[y, x]
+                        expand[y,x] = count
+                        count+=1
 
-                                    g2 = g + cost
-                                    f2 = g2 + heuristic_map[new_y,new_x]
-                                    open_arr.append([f2,g2,new_y,new_x])
-                                    closed[new_y,new_x]=1
-            # found goal or resigned
-            if found:
+                        if y == goal_y and x == goal_x:
+                            found = True
+                        else:
+                            for i in range(len(delta)):
+                                new_y = y + delta[i][0]
+                                new_x = x + delta[i][1]
 
-                # find next my_move, how to get to any non -1 in expand
-                # todo: but also 2 deep?
-                for i in range(len(delta)):
-                    next_y = my_head_y + delta[i][0]
-                    next_x = my_head_x + delta[i][1]
-                    #if expand is "pos" and in bounds
-                    if 0 <= next_y < expand.shape[0] and \
-                            0 <= next_x < expand.shape[1] and \
-                            expand[next_y, next_x]==1:
-                        my_move = delta_name[i]
-                        path_found=True
-                        which_move='food'
-                        break
-            if path_found:
-                print(f'heuristics map\n{heuristic_map}')
-                break
+                                # if in-bounds, also mark as head
+                                if 0 <= new_y < snakes_grid.shape[0] and \
+                                    0 <= new_x < snakes_grid.shape[1]:
+                                    # if unvisited and traversible
+                                    if closed[new_y,new_x] ==0 and \
+                                            snakes_grid[new_y,new_x]==0:
+                                        # todo: the first my_move is where we are going
+
+                                        g2 = g + cost
+                                        f2 = g2 + heuristic_map[new_y,new_x]
+                                        open_arr.append([f2,g2,new_y,new_x])
+                                        closed[new_y,new_x]=1
+                # found goal or resigned
+                if found:
+
+                    # find next my_move, how to get to any non -1 in expand
+                    # todo: but also 2 deep?
+                    for i in range(len(delta)):
+                        next_y = my_head_y + delta[i][0]
+                        next_x = my_head_x + delta[i][1]
+                        #if expand is "pos" and in bounds
+                        if 0 <= next_y < expand.shape[0] and \
+                                0 <= next_x < expand.shape[1] and \
+                                expand[next_y, next_x]==1:
+                            my_move = delta_name[i]
+                            path_found=True
+                            which_move='food'
+                            break
+                if path_found:
+                    print(f'heuristics map\n{heuristic_map}')
+                    break
 
     '''
                         curr_spot = expand[next_y, next_x]
@@ -254,6 +255,8 @@ def move():
                     if path_found:
                         break
     '''
+    food_arr = food_arr[count:]
+    count = 0
 
     # if food A-star had no path or no food within reach to begin with
     # so chase tail
@@ -313,7 +316,6 @@ def move():
                                 closed[new_y,new_x] = 1
         # found goal or resigned
         if found:
-
             # find next my_move, how to get to spot that's not -1 in expand
             # but choose a spot that has continuation, not just an explored one
             for i in range(len(delta)):
@@ -343,8 +345,162 @@ def move():
                 if path_found:
                     break
                 '''
+    # look for spots next to tail
+    if not path_found:
+        for i in range(len(delta)):
+            # chase tail if nothing in food_arr
+            goal_y = snakes[0]['body'][-1]['y'] + delta[i][0]
+            goal_x = snakes[0]['body'][-1]['x'] + delta[i][1]
+            if 0 <= goal_y < snakes_grid.shape[0] and \
+                    0 <= goal_x < snakes_grid.shape[1] and \
+                    snakes_grid[goal_y, goal_x]==0:
+                # visited array
+                closed = np.zeros(snakes_grid.shape, dtype=np.int)
+                closed[my_head_y, my_head_x] = 1
+                # expand is final map returned with numbered spots
+                expand = np.full(snakes_grid.shape, -1, dtype=np.int)
+
+                g = 0  # each step is 1
+                heuristic_map = make_heuristic_map([goal_y, goal_x],
+                                                   snakes_grid)
+                print(f'heuristics_map\n{heuristic_map}')
+                f = g + heuristic_map[my_head_y, my_head_x]
+
+                open_arr = [[f, g, my_head_y, my_head_x]]
+                found = False  # set when search complete
+                resign = False  # set when can't expand
+                count = 0
+                # calculate entire path but only use first my_move
+                while not found and not resign:
+                    if len(open_arr) == 0:
+                        resign = True
+                    else:
+                        open_arr.sort()
+                        open_arr.reverse()
+                        next = open_arr.pop()
+                        y = next[2]
+                        x = next[3]
+                        g = next[1]
+                        f = g + heuristic_map[y, x]
+                        expand[y, x] = count
+                        count += 1
+
+                        if y == goal_y and x == goal_x:
+                            found = True
+                        else:
+                            for i in range(len(delta)):
+                                new_y = y + delta[i][0]
+                                new_x = x + delta[i][1]
+
+                                # if in-bounds, also mark as head
+                                if 0 <= new_y < snakes_grid.shape[0] and \
+                                        0 <= new_x < snakes_grid.shape[1]:
+                                    # if unvisited and traversible
+                                    if closed[new_y,new_x] == 0 and \
+                                            snakes_grid[new_y,new_x] == 0:
+                                        # todo: the first my_move is where we are going
+
+                                        g2 = g + cost
+                                        f2 = g2 + heuristic_map[new_y,new_x]
+                                        open_arr.append([f2, g2, new_y, new_x])
+                                        closed[new_y,new_x] = 1
+                # found goal or resigned
+                if found:
+                    # find next my_move, how to get to spot that's not -1 in expand
+                    # but choose a spot that has continuation, not just an explored one
+                    for i in range(len(delta)):
+                        next_y = my_head_y + delta[i][0]
+                        next_x = my_head_x + delta[i][1]
+                        if 0 <= next_y < expand.shape[0] and \
+                                0 <= next_x < expand.shape[1] and \
+                                expand[next_y, next_x]==1:
+                            my_move = delta_name[i]
+                            path_found = True
+                            which_move = 'tail'
+                            break
+            if path_found:
+                break
     # pretty print
     #print(f"my_move_data:\n{json.dumps(data, indent=2)}")
+    # look for further food
+    if not path_found:
+        for q in range(len(food_arr)):
+            # todo: only go after near food first
+            if food_arr[q][0] < width * 0.8:
+                count+=1
+                # goal y and x
+                goal_y = food_arr[q][1]
+                goal_x = food_arr[q][2]
+                # visited array
+                closed = np.zeros(snakes_grid.shape, dtype=np.int)
+                closed[my_head_y, my_head_x] = 1
+                # expand is final map returned with numbered spots
+                expand = np.full(snakes_grid.shape, -1, dtype=np.int)
+
+                g = 0 # each step is 1
+                heuristic_map = make_heuristic_map((goal_y, goal_x),
+                                                   snakes_grid)
+
+                f = g + heuristic_map[my_head_y, my_head_x]
+
+                open_arr = [[f,g,my_head_y, my_head_x]]
+                found = False # set when search complete
+                resign = False # set when can't expand
+                count = 0
+                # only need to return the next my_move? or calculate entire path?
+                while not found and not resign:
+                    if len(open_arr) == 0:
+                        resign = True
+                    else:
+                        open_arr.sort()
+                        open_arr.reverse()
+                        next = open_arr.pop()
+                        y = next[2]
+                        x = next[3]
+                        g = next[1]
+
+                        f = g + heuristic_map[y, x]
+                        expand[y,x] = count
+                        count+=1
+
+                        if y == goal_y and x == goal_x:
+                            found = True
+                        else:
+                            for i in range(len(delta)):
+                                new_y = y + delta[i][0]
+                                new_x = x + delta[i][1]
+
+                                # if in-bounds, also mark as head
+                                if 0 <= new_y < snakes_grid.shape[0] and \
+                                    0 <= new_x < snakes_grid.shape[1]:
+                                    # if unvisited and traversible
+                                    if closed[new_y,new_x] ==0 and \
+                                            snakes_grid[new_y,new_x]==0:
+                                        # todo: the first my_move is where we are going
+
+                                        g2 = g + cost
+                                        f2 = g2 + heuristic_map[new_y,new_x]
+                                        open_arr.append([f2,g2,new_y,new_x])
+                                        closed[new_y,new_x]=1
+                # found goal or resigned
+                if found:
+
+                    # find next my_move, how to get to any non -1 in expand
+                    # todo: but also 2 deep?
+                    for i in range(len(delta)):
+                        next_y = my_head_y + delta[i][0]
+                        next_x = my_head_x + delta[i][1]
+                        #if expand is "pos" and in bounds
+                        if 0 <= next_y < expand.shape[0] and \
+                                0 <= next_x < expand.shape[1] and \
+                                expand[next_y, next_x]==1:
+                            my_move = delta_name[i]
+                            path_found=True
+                            which_move='food'
+                            break
+                if path_found:
+                    print(f'heuristics map\n{heuristic_map}')
+                    break
 
     #chasing tail nor search for food worked so random?
     if not path_found:

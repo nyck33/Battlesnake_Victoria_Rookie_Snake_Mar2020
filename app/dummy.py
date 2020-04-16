@@ -8,11 +8,11 @@ from bottle import HTTPResponse
 
 # my_moves
 delta = [[-1, 0],  # go up
-         [0, -1],  # go left
-         [1, 0],  # go down
-         [0, 1]]  # go right
+            [0, -1],  # go left
+            [1, 0],  # go down
+            [0, 1]]  # go right
 
-delta_name = ['up', 'left', 'down', 'right']
+delta_name = ['up', 'left','down', 'right']
 
 cost = 1
 
@@ -37,7 +37,7 @@ def start():
     Your response will control how your snake is displayed on the board.
     """
     data = bottle.request.json
-    # print(f"start_data:\n{json.dumps(data, indent=2)}")
+    #print(f"start_data:\n{json.dumps(data, indent=2)}")
 
     response = {"color": "#fc0313", "headType": "fang", "tailType": "bolt"}
     return HTTPResponse(
@@ -45,11 +45,9 @@ def start():
         headers={"Content-Type": "application/json"},
         body=json.dumps(response),
     )
-
-
 def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid):
-    # goal_y = snake_tails[i,1]
-    # goal_x = snake_tails[i,2]
+    #goal_y = snake_tails[i,1]
+    #goal_x = snake_tails[i,2]
     # visited array
     closed = np.zeros(snakes_grid.shape, dtype=np.int)
     closed[my_head_y, my_head_x] = 1
@@ -58,8 +56,8 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid):
 
     g = 0  # each step is 1
     heuristic_map = make_heuristic_map([goal_y, goal_x],
-                                       snakes_grid)
-    # print(f'heuristics_map\n{heuristic_map}')
+                                        snakes_grid)
+    #print(f'heuristics_map\n{heuristic_map}')
     f = g + heuristic_map[my_head_y, my_head_x]
 
     open_arr = [[f, g, my_head_y, my_head_x]]
@@ -92,13 +90,13 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid):
                     if 0 <= new_y < snakes_grid.shape[0] and \
                             0 <= new_x < snakes_grid.shape[1]:
                         # if unvisited and traversible
-                        if closed[new_y, new_x] == 0 and \
-                                snakes_grid[new_y, new_x] == 0:
+                        if closed[new_y,new_x] == 0 and \
+                                snakes_grid[new_y,new_x] == 0:
                             # todo: the first my_move is where we are going
                             g2 = g + cost
-                            f2 = g2 + heuristic_map[new_y, new_x]
+                            f2 = g2 + heuristic_map[new_y,new_x]
                             open_arr.append([f2, g2, new_y, new_x])
-                            closed[new_y, new_x] = 1
+                            closed[new_y,new_x] = 1
     # found goal or resigned
     if found:
         # find next my_move, how to get to spot that's not -1 in expand
@@ -108,14 +106,13 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid):
             next_x = my_head_x + delta[i][1]
             if 0 <= next_y < expand.shape[0] and \
                     0 <= next_x < expand.shape[1] and \
-                    expand[next_y, next_x] == 1:
+                    expand[next_y, next_x]==1:
                 my_move = delta_name[i]
                 path_found = True
                 return my_move, path_found
     else:
-        path_found = False
+        path_found=False
         return 'resign', path_found
-
 
 def fill_food_arr(food, my_head_y, my_head_x):
     # list in order of nearest to furthest food tuples (dist, y,x)
@@ -129,7 +126,7 @@ def fill_food_arr(food, my_head_y, my_head_x):
         # dont' go for food further than width away
 
     food_arr = sorted(food_arr, key=lambda x: x[0])
-    # print(f'\n\nfood arr {food_arr}\n\n')
+    #print(f'\n\nfood arr {food_arr}\n\n')
     return food_arr
 
 
@@ -143,7 +140,7 @@ def fill_snakes_grid(snakes, snakes_grid, my_body_len, my_id):
     # vals for larger or equal size opponents
     head_val = 5
     body_val = 6
-    # snake_heads = np.zeros((len(snakes)-1, 2), dtype=np.int)
+    #snake_heads = np.zeros((len(snakes)-1, 2), dtype=np.int)
     snake_heads = []
     for j in range(len(snakes)):
         curr_snake = snakes[j]
@@ -153,14 +150,14 @@ def fill_snakes_grid(snakes, snakes_grid, my_body_len, my_id):
             body_val = 6
             # get snake heads
             if curr_snake['id'] != my_id:
-                snake_heads.append((curr_snake['body'][k]['y'], \
-                                    curr_snake['body'][k]['x']))
+                snake_heads.append((curr_snake['body'][k]['y'],\
+                                        curr_snake['body'][k]['x']))
             # head of all snakes including me
             if k == 0:
                 snakes_grid[curr_snake['body'][k]['y'],
                             curr_snake['body'][k]['x']] = head_val
                 # todo: pick 1/4 connected for next_head?
-                # if snake is not me and equal or bigger,  next heads are marked
+                #if snake is not me and equal or bigger,  next heads are marked
                 if len(curr_snake['body']) >= my_body_len and \
                         curr_snake['id'] != my_id:
                     next_head_candidates = []
@@ -171,13 +168,13 @@ def fill_snakes_grid(snakes, snakes_grid, my_body_len, my_id):
                                       + delta[s][1]
                         # if in bounds and not its own body
                         if 0 <= next_head_y < snakes_grid.shape[0] \
-                                and 0 <= next_head_x < snakes_grid.shape[1] \
-                                and snakes_grid[next_head_y, next_head_x] == 0:
+                                and 0 <= next_head_x < snakes_grid.shape[1]\
+                                and snakes_grid[next_head_y, next_head_x]==0:
                             snakes_grid[next_head_y, next_head_x] = head_val
-                            # next_head_candidates.append([next_head_y,next_head_x])
+                            #next_head_candidates.append([next_head_y,next_head_x])
                     # random choice on candidates
-                    # next_head = random.choice(next_head_candidates)
-                    # snakes_grid[next_head[0], next_head[1]] = head_val
+                    #next_head = random.choice(next_head_candidates)
+                    #snakes_grid[next_head[0], next_head[1]] = head_val
 
             # snakes body
             else:
@@ -200,13 +197,13 @@ def move():
              [1, 0],  # go down
              [0, 1]]  # go right
 
-    delta_name = ['up', 'left', 'down', 'right']
+    delta_name = ['up', 'left','down', 'right']
     # call for data
     data = bottle.request.json
     turn = data['turn']
     # pretty print
     print(f"turn: {turn}\n{json.dumps(data, indent=2)}")
-    # board size
+    #board size
     width = data['board']['width']
     height = data['board']['height']
     # my head
@@ -226,42 +223,43 @@ def move():
     head_val = 5
     body_val = 6
 
-    # todo: debugging
+    #todo: debugging
     which_move = ''
     my_move = ''
 
-    # fill snakes_grid
+    #fill snakes_grid
     snakes_grid, snake_heads = fill_snakes_grid(snakes, snakes_grid, my_body_len, my_id)
 
-    # todo: hits own tail so include on snakes grid
-    # snakes_grid[data['you']['body'][-1]['y'], data['you']['body'][-1]['x']] = 3
+    #todo: hits own tail so include on snakes grid
+    #snakes_grid[data['you']['body'][-1]['y'], data['you']['body'][-1]['x']] = 3
 
-    # list of dicts of food locations
+    #list of dicts of food locations
     food = data['board']['food']
     # list in order of nearest to furthest food tuples (dist, y,x)
     food_arr = []
-    get_food = False
-    # if there is food
-    if len(food) > 0:
+    #if there is food
+    if len(food)>0:
         food_arr = fill_food_arr(food, my_head_y, my_head_x)
-        get_food = True
-    # print(f"snakes_grid\n {snakes_grid}")
-    path_found = False
+
+    #print(f"snakes_grid\n {snakes_grid}")
+    cost = 1
+    #first_my_move = 0
+
+    path_found=False
     # there is a food so A star for route to food using snake grid for g
     food_count = 0
-    if get_food:
+    if not path_found:
         for q in range(len(food_arr)):
             # todo: only go after near food first
-            if food_arr[q][0] < width * 0.3:
-                food_count += 1
+            if food_arr[q][0] < width * 0.8:
+                food_count+=1
                 # goal y and x
                 goal_y = food_arr[q][1]
                 goal_x = food_arr[q][2]
+
                 my_move, path_found = search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid)
-            if path_found:
-                which_move = 'food near'
-                break
-    # shorten food_arr
+    
+    #shorten food_arr
     food_arr = food_arr[food_count:]
     # if food A-star had no path or no food within reach to begin with
     # so chase tail
@@ -270,8 +268,7 @@ def move():
         goal_y = snakes[0]['body'][-1]['y']
         goal_x = snakes[0]['body'][-1]['x']
         my_move, path_found = search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid)
-        if path_found:
-            which_move = 'tail'
+        
     # look for spots next to tail
     if not path_found:
         for i in range(len(delta)):
@@ -280,12 +277,12 @@ def move():
             goal_x = snakes[0]['body'][-1]['x'] + delta[i][1]
             if 0 <= goal_y < snakes_grid.shape[0] and \
                     0 <= goal_x < snakes_grid.shape[1] and \
-                    snakes_grid[goal_y, goal_x] == 0:
+                    snakes_grid[goal_y, goal_x]==0:
                 my_move, path_found = search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid)
             if path_found:
-                which_move = 'next to tail'
                 break
-
+    # pretty print
+    #print(f"my_move_data:\n{json.dumps(data, indent=2)}")
     # look for further food
     if not path_found:
         for q in range(len(food_arr)):
@@ -295,44 +292,46 @@ def move():
             goal_x = food_arr[q][2]
             my_move, path_found = search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid)
             if path_found:
-                which_move = 'far food'
                 break
-
-    # chasing tail nor search for food worked so random?
+                
+    #chasing tail nor search for food worked so random?
     if not path_found:
         for t in range(len(delta)):
             next_y = my_head_y + delta[t][0]
             next_x = my_head_x + delta[t][1]
             if 0 <= next_y < snakes_grid.shape[0] and \
                     0 <= next_x < snakes_grid.shape[1] and \
-                    snakes_grid[next_y, next_x] == 0:
+                    snakes_grid[next_y, next_x]==0:
                 my_move = delta_name[t]
                 for v in range(len(delta)):
                     n_next_y = next_y + delta[v][0]
                     n_next_x = next_x + delta[v][1]
                     if 0 <= n_next_y < snakes_grid.shape[0] and \
                             0 <= n_next_x < snakes_grid.shape[1] and \
-                            snakes_grid[n_next_y, n_next_x] == 0:
+                            snakes_grid[n_next_y,n_next_x]==0:
                         my_move = delta_name[t]
                         which_move = 'last resort'
-                        path_found = True
+                        path_found=True
                         break
             if path_found:
                 break
+    # Choose a random direction to my_move in
+    #if not path_found:
+        #directions = ["up", "down", "left", "right"]
+      #  my_move = random.choice(directions)
+       # path_found=True
 
     # Shouts are messages sent to all the other snakes in the game.
     # Shouts are not displayed on the game board.
     shout = "namenayo!"
-
-    print(f'\n\nturn: {turn}\nmy_move: {my_move}\n '
-                    f'which_move: {which_move}\n\n')
+    turn = data['turn']
+    print(f'\n\nturn: {turn}\nmy_move: {my_move}\n which_move: {which_move}\n\n')
     response = {"move": my_move, "shout": shout}
     return HTTPResponse(
         status=200,
         headers={"Content-Type": "application/json"},
         body=json.dumps(response),
     )
-
 
 def heuristic(start_node, goal_node):
     start_x = start_node[1]
@@ -341,8 +340,7 @@ def heuristic(start_node, goal_node):
     goal_y = goal_node[0]
     dx = abs(start_x - goal_x)
     dy = abs(start_y - goal_y)
-    return (dx + dy)
-
+    return (dx+dy)
 
 def make_heuristic_map(goal, snakes_grid):
     goal_y = goal[0]
@@ -350,9 +348,9 @@ def make_heuristic_map(goal, snakes_grid):
     heuristic_map = np.zeros(snakes_grid.shape, dtype=np.int)
     for i in range(heuristic_map.shape[0]):
         for j in range(heuristic_map.shape[1]):
-            dy = np.abs(i - goal_y)
-            dx = np.abs(j - goal_x)
-            heuristic_map[i, j] = dy + dx
+            dy = np.abs(i-goal_y)
+            dx = np.abs(j-goal_x)
+            heuristic_map[i,j] = dy + dx
 
     return heuristic_map
 
@@ -363,7 +361,7 @@ def end():
     Called every time a game with your snake in it ends.
     """
     data = bottle.request.json
-    # print(f"end data:\n{json.dumps(data, indent=2)}")
+    #print(f"end data:\n{json.dumps(data, indent=2)}")
     return HTTPResponse(status=200)
 
 

@@ -116,8 +116,7 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid, snakes_grid_two):
                     n_next_x = next_x + delta[j][1]
                     if (0 <= n_next_y < expand.shape[0] and
                             0 <= n_next_x < expand.shape[1]) and \
-                            snakes_grid_two[n_next_y, n_next_x]==0 or \
-                            snakes_grid_two[n_next_y, n_next_x]==9:
+                            snakes_grid_two[n_next_y, n_next_x]==0:
                         # print(f'expand\n {expand}')
                         my_move = delta_name[i]
                         path_found = True
@@ -127,7 +126,8 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid, snakes_grid_two):
                         continue
                 return my_move, found
     else:
-        return 'resign', found
+        my_move = 'up'
+        return my_move, found
 
 
 def fill_food_arr(food, my_head_y, my_head_x):
@@ -211,7 +211,6 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
                                         curr_snake, snakes_grid,
                                         snakes_grid_two, next_head_val)
 
-                # todo: pick 1/3 connected for next_head? how to predict
                 # smaller would move away, bigger wouldn't care
                 # mark all next heads as 9
                     snakes_grid, snakes_grid_two = mark_next_heads(delta,
@@ -229,23 +228,27 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
         my_snake=False
 
     return snakes_grid, snakes_grid_two, snake_heads
-'''
-def calc_max_dist_for_food(my_health, width):
+
+def calc_max_dist_for_food(my_health, width, factor=8):
     # make it inverse to health
     max_dist_for_food = width
-    if my_health > 50:
-        max_dist_for_food = width * 0.5
+    if my_health > 90:
+        max_dist_for_food = width/factor
+    elif my_health > 75:
+        max_dist_for_food = width/factor-2
+    elif my_health > 50:
+        max_dist_for_food = width/factor-5
     elif my_health >40:
-        max_dist_for_food = width * 0.6
+        max_dist_for_food = width/factor-6
     elif my_health > 30:
-        max_dist_for_food = width * 0.7
+        max_dist_for_food = width/factor-7
     elif my_health > 10:
         max_dist_for_food = width
     else:
-        max_dist_for_food = width * 2
+        max_dist_for_food = width *2
 
     return max_dist_for_food
-'''
+
 @bottle.post("/move")
 def move():
     """
@@ -280,7 +283,7 @@ def move():
     # my health
     my_health = data['you']['health']
     # calculate max distance we go for food
-    #max_dist_for_food = calc_max_dist_for_food(my_health, width)
+    max_dist_for_food = calc_max_dist_for_food(my_health, width)
 
     # for comparison with opponent's snakes
     my_body_len = len(data['you']['body'])
@@ -295,17 +298,7 @@ def move():
     # make snakes_grid
     snakes_grid, snakes_grid_two, snake_heads = \
         fill_snakes_grid(snakes, width, height, my_body_len, my_id)
-    '''
-    # attack any smaller snakeheads next to my head
-    for z in range(len(delta)):
-        attack_y = my_head_y + delta[z][0]
-        attack_x = my_head_x + delta[z][1]
-        if 0 <= attack_y < snakes_grid.shape[0] \
-                            and 0 <= attack_x < snakes_grid.shape[1]\
-                            and snakes_grid[attack_y, attack_x] == 1:
-            my_move = delta_name[z]
-            path_found = True
-    '''
+
     # list of dicts of food locations
     food = data['board']['food']
     # list in order of nearest to furthest food tuples (dist, y,x)
@@ -317,72 +310,69 @@ def move():
     food_count = 0
 
     get_food=False
-    
+
     if not path_found:
         for q in range(len(food_arr)):
             # todo: only go after food I'm closer to it than other snakes
-            #if food_arr[q][0] <= max_dist_for_food:
-            # iterate snakeheads
-            for r in range(len(snake_heads)):
-                if heuristic(snake_heads[r], food_arr[q][1:]) \
-                        > heuristic((my_head_y, my_head_x), food_arr[q][1:]):
-                    get_food=True
-                else:
-                    get_food=False
-                    break
+            if food_arr[q][0] <= max_dist_for_food:
+                # iterate snakeheads
+                for r in range(len(snake_heads)):
+                    if heuristic(snake_heads[r], food_arr[q][1:]) \
+                            > heuristic((my_head_y, my_head_x), food_arr[q][1:]):
+                        get_food=True
+                    else:
+                        break
             food_count += 1
-            if get_food:
+            if get_food and snakes_grid[food_arr[q][1], food_arr[q][2]]==0:
                 # goal y and x
                 goal_y = food_arr[q][1]
                 goal_x = food_arr[q][2]
-                if snakes_grid[goal_y, goal_x]==0:
-                    my_move, path_found = search(goal_y, goal_x, my_head_y,
+                my_move, path_found = search(goal_y, goal_x, my_head_y,
                                              my_head_x, snakes_grid, snakes_grid_two)
-                else:
-                    continue
+            else:
+                continue
             if path_found:
                 which_move = 'food near'
                 break
     # shorten food_arr
     food_arr = food_arr[food_count:]
-    # if food A-star had no path or no food within reach to begin with
-    # so chase tail
+
+    #chase tail
     if not path_found:
         # chase tail if nothing in food_arr
-        goal_y = my_tail_y
-        goal_x = my_tail_x
-        my_move, path_found = search(goal_y, goal_x, my_head_y,
+        my_move, path_found = search(my_tail_y, my_tail_x, my_head_y,
                                      my_head_x, snakes_grid, snakes_grid_two)
         if path_found:
             which_move = 'tail'
     '''
-    # look for spots next to tail
+    # stretch myself out
+    stretch_goal_x, stretch_goal_y = 0, 0
+    if not path_found:
+        # head is lower
+        if my_head_y > my_tail_y:
+            stretch_goal_y = height - 1
+        else:
+            stretch_goal_y = 0
+        # head is more right than tail
+        if my_head_x > my_tail_x:
+            stretch_goal_x = width - 1
+        else:
+            stretch_goal_x = 0
+        my_move, path_found = search(stretch_goal_y, stretch_goal_x,
+                                     my_head_y, my_head_x, snakes_grid,
+                                     snakes_grid_two)
+    # try surrounding spots
     if not path_found:
         for i in range(len(delta)):
-            # chase tail if nothing in food_arr
-            goal_y = snakes[0]['body'][-1]['y'] + delta[i][0]
-            goal_x = snakes[0]['body'][-1]['x'] + delta[i][1]
-            if 0 <= goal_y < snakes_grid.shape[0] and \
-                    0 <= goal_x < snakes_grid.shape[1] and \
-                    snakes_grid[goal_y, goal_x] == 0:
-                my_move, path_found = search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid)
-            if path_found:
-                which_move = 'next to tail'
-                break
+            alt_goal_y = stretch_goal_y + delta[i][0]
+            alt_goal_x = stretch_goal_x + delta[i][1]
+            if 0 <= alt_goal_y < snakes_grid.shape[0] and \
+                    0 <= alt_goal_x < snakes_grid.shape[1]:
+                my_move, path_found = search(alt_goal_y, alt_goal_x,
+                                             my_head_y, my_head_x, snakes_grid,
+                                             snakes_grid_two)
+                which_move = 'stretch'
     '''
-    # look for further food
-    if not path_found:
-        for q in range(len(food_arr)):
-            # goal y and x
-            goal_y = food_arr[q][1]
-            goal_x = food_arr[q][2]
-            if snakes_grid[goal_y, goal_x]==0:
-                my_move, path_found = search(goal_y, goal_x, my_head_y,
-                                             my_head_x, snakes_grid, snakes_grid_two)
-                if path_found:
-                    which_move = 'far food'
-                    break
-
     # chasing tail nor search for food worked so just go two deep
     if not path_found:
         for t in range(len(delta)):
@@ -390,8 +380,8 @@ def move():
             next_x = my_head_x + delta[t][1]
             if 0 <= next_y < snakes_grid.shape[0] and \
                     0 <= next_x < snakes_grid.shape[1] and \
-                    snakes_grid[next_y, next_x]==0 or \
-                        snakes_grid[next_y, next_x]==9:
+                    snakes_grid[next_y, next_x]==0:
+                    #or snakes_grid[next_y, next_x]==9:
                 my_move = delta_name[t]
                 which_move = 'last resort'
                 for v in range(len(delta)):
@@ -399,8 +389,8 @@ def move():
                     n_next_x = next_x + delta[v][1]
                     if 0 <= n_next_y < snakes_grid.shape[0] and \
                             0 <= n_next_x < snakes_grid.shape[1] and \
-                            snakes_grid_two[n_next_y, n_next_x] == 0 \
-                                or snakes_grid_two[n_next_y, n_next_x]==9:
+                            snakes_grid_two[n_next_y, n_next_x] == 0:
+                                #or snakes_grid_two[n_next_y, n_next_x]==9:
                         my_move = delta_name[t]
                         which_move = 'last resort'
                         path_found = True
@@ -421,7 +411,8 @@ def move():
         body=json.dumps(response),
     )
 
-
+def find_stretch_goal(width, height):
+    pass
 def heuristic(start_node, goal_node):
     start_x = start_node[1]
     start_y = start_node[0]

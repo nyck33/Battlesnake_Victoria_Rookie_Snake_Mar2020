@@ -2,7 +2,7 @@ import json
 import os
 import random
 import numpy as np
-
+from math import ceil
 import bottle
 from bottle import HTTPResponse
 
@@ -56,7 +56,7 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid, snakes_grid_two):
     expand = np.full(snakes_grid.shape, -1, dtype=np.int)
 
     g = 0  # each step is 1
-    heuristic_map = make_heuristic_map((goal_y, goal_x),
+    heuristic_map = make_heuristic_map([goal_y, goal_x],
                                        snakes_grid)
     # print(f'heuristics_map\n{heuristic_map}')
     f = g + heuristic_map[my_head_y, my_head_x]
@@ -136,9 +136,9 @@ def fill_food_arr(food, my_head_y, my_head_x):
     # if there is food
 
     for z in range(len(food)):
-        food_dist = heuristic((my_head_y, my_head_x),
-                              (food[z]['y'], food[z]['x']))
-        food_arr.append((food_dist, food[z]['y'], food[z]['x']))
+        food_dist = heuristic([my_head_y, my_head_x],
+                              [food[z]['y'], food[z]['x']])
+        food_arr.append([food_dist, food[z]['y'], food[z]['x']])
         # dont' go for food further than width away
 
     food_arr = sorted(food_arr, key=lambda x: x[0])
@@ -229,23 +229,23 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
 
     return snakes_grid, snakes_grid_two, snake_heads
 
-def calc_max_dist_for_food(my_health, width, factor=8):
+def calc_max_dist_for_food(my_health, width, factor=1):
     # make it inverse to health
-    max_dist_for_food = width
+    max_dist_for_food = width*2
     if my_health > 90:
-        max_dist_for_food = width/factor
+        max_dist_for_food = width/width
     elif my_health > 75:
-        max_dist_for_food = width/factor-2
+        max_dist_for_food = min(factor*3, width)
     elif my_health > 50:
-        max_dist_for_food = width/factor-5
+        max_dist_for_food = min(factor*5, width)
     elif my_health >40:
-        max_dist_for_food = width/factor-6
-    elif my_health > 30:
-        max_dist_for_food = width/factor-7
-    elif my_health > 10:
         max_dist_for_food = width
+    elif my_health > width*2:
+        max_dist_for_food = width*2
+    elif my_health > width:
+        max_dist_for_food = width*2
     else:
-        max_dist_for_food = width *2
+        max_dist_for_food = width*2
 
     return max_dist_for_food
 
@@ -287,6 +287,8 @@ def move():
 
     # for comparison with opponent's snakes
     my_body_len = len(data['you']['body'])
+    if my_body_len > width:
+        stretch = True
 
     # flags
     path_found = False
@@ -317,8 +319,9 @@ def move():
             if food_arr[q][0] <= max_dist_for_food:
                 # iterate snakeheads
                 for r in range(len(snake_heads)):
+                    # if other snakes farther don't get food
                     if heuristic(snake_heads[r], food_arr[q][1:]) \
-                            > heuristic((my_head_y, my_head_x), food_arr[q][1:]):
+                            >= heuristic([my_head_y, my_head_x], food_arr[q][1:]):
                         get_food=True
                     else:
                         break

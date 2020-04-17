@@ -317,6 +317,7 @@ def move():
         for q in range(len(food_arr)):
             # todo: only go after food I'm closer to it than other snakes
             if food_arr[q][0] <= max_dist_for_food:
+
                 # iterate snakeheads
                 for r in range(len(snake_heads)):
                     # if other snakes farther don't get food
@@ -324,7 +325,9 @@ def move():
                             >= heuristic([my_head_y, my_head_x], food_arr[q][1:]):
                         get_food=True
                     else:
+                        get_food=False
                         break
+
             food_count += 1
             if get_food and snakes_grid[food_arr[q][1], food_arr[q][2]]==0:
                 # goal y and x
@@ -383,8 +386,8 @@ def move():
             next_x = my_head_x + delta[t][1]
             if 0 <= next_y < snakes_grid.shape[0] and \
                     0 <= next_x < snakes_grid.shape[1] and \
-                    snakes_grid[next_y, next_x]==0:
-                    #or snakes_grid[next_y, next_x]==9:
+                    (snakes_grid[next_y, next_x]==0
+                    or snakes_grid[next_y, next_x]==9):
                 my_move = delta_name[t]
                 which_move = 'last resort'
                 for v in range(len(delta)):
@@ -392,8 +395,8 @@ def move():
                     n_next_x = next_x + delta[v][1]
                     if 0 <= n_next_y < snakes_grid.shape[0] and \
                             0 <= n_next_x < snakes_grid.shape[1] and \
-                            snakes_grid_two[n_next_y, n_next_x] == 0:
-                                #or snakes_grid_two[n_next_y, n_next_x]==9:
+                            (snakes_grid_two[n_next_y, n_next_x] == 0
+                                or snakes_grid_two[n_next_y, n_next_x]==9):
                         my_move = delta_name[t]
                         which_move = 'last resort'
                         path_found = True

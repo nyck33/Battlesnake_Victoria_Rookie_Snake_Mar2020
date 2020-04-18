@@ -384,22 +384,25 @@ def move():
                     move_num, my_move, path_found = \
                         search(food_arr[q][1], food_arr[q][2], my_head_y,
                                                  my_head_x, snakes_grid)
+                    if my_health<50 and path_found:
+                        which_move = 'fast food'
+                        break
                     # todo: check path out to own tail, don't trap myself
                     new_head_y = my_head_y + delta[move_num][0]
                     new_head_x = my_head_x + delta[move_num][1]
 
                     if 0<=new_head_y<snakes_grid.shape[0] and \
                             0<=new_head_x<snakes_grid.shape[1]:
-                        # check that we can reach our tail
-                        found_path = search(next_tail_y, next_tail_x, new_head_y,
-                                         new_head_x, solo_grid, check_path=True)
+                        # check that we can reach a tail
+                        for q in range(len(snake_tails)):
+                            found_path = search(snake_tails[q][0],
+                                                snake_tails[q][1], new_head_y,
+                                         new_head_x, snakes_grid, check_path=True)
 
                     if found_path:
                         which_move = 'food near'
                         print(f'my_move: {my_move}')
                         break
-            if found_path:
-                break
 
     # shorten food_arr
     food_arr = food_arr[food_count:]
@@ -413,7 +416,7 @@ def move():
             #print(f'my_move: {my_move}')
             which_move = 'tail'
 
-    '''
+
     # chase other snakes' tails
     if not path_found:
         for q in range(len(snake_tails)):
@@ -421,7 +424,7 @@ def move():
                                          my_head_y,my_head_x,snakes_grid)
             if path_found:
                 which_move='other tail'
-    '''
+
     # chasing tail nor search for food worked
     if not path_found:
         for t in range(len(delta)):

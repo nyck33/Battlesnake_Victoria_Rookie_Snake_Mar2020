@@ -279,11 +279,11 @@ def calc_max_dist_for_food(my_health, width, factor=3):
     elif my_health > 75:
         max_dist_for_food = factor + 2
     elif my_health > 50:
-        max_dist_for_food = width
+        max_dist_for_food = factor *1.5
     elif my_health >40:
-        max_dist_for_food = width*1.5
+        max_dist_for_food = width*1.8
     else:
-        max_dist_for_food = width*2
+        max_dist_for_food = width*3
 
     return max_dist_for_food
 
@@ -361,6 +361,7 @@ def move():
         for q in range(len(food_arr)):
             # todo: go after food within dist and I'm closer
             if food_arr[q][0] <= max_dist_for_food:
+                '''
                 # iterate snakeheads
                 for r in range(len(snake_heads)):
                     # small head 1, big head 5
@@ -375,7 +376,8 @@ def move():
                         else:
                             get_food=False
                             break
-
+                '''
+                get_food=True
                 food_count += 1
                 if get_food:
                     # goal y and x
@@ -428,15 +430,16 @@ def move():
             if 0 <= next_y < snakes_grid.shape[0] and \
                     0 <= next_x < snakes_grid.shape[1]:
                 if snakes_grid[next_y, next_x]==0 or \
-                        snakes_grid[next_y, next_x]==8:
+                        snakes_grid[next_y, next_x]==next_smhead_val:
                     new_head_y = my_head_y + delta[t][0]
                     new_head_x = my_head_x + delta[t][1]
-                    path_found = search(my_tail_y, my_tail_x, new_head_y,
+                    path_found = search(next_tail_y, next_tail_x, new_head_y,
                                         new_head_x, solo_grid, check_path=True)
 
             if path_found:
                 my_move = delta_name[t]
                 #print(f'my_move: {my_move}')
+                which_move='last resort'
                 break
 
     # Shouts are messages sent to all the other snakes in the game.

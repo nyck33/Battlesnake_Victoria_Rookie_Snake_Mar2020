@@ -433,7 +433,8 @@ def move():
             if 0 <= next_y < snakes_grid.shape[0] and \
                     0 <= next_x < snakes_grid.shape[1]:
                 if snakes_grid[next_y, next_x]==0 or \
-                        snakes_grid[next_y, next_x]==next_smhead_val:
+                        snakes_grid[next_y, next_x]==next_smhead_val or \
+                        snakes_grid[next_y, next_x]==next_bighead_val:
                     new_head_y = my_head_y + delta[t][0]
                     new_head_x = my_head_x + delta[t][1]
                     path_found = search(next_tail_y, next_tail_x, new_head_y,

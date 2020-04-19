@@ -60,6 +60,8 @@ def start():
 def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid, check_path=False):
 
     my_move = ''
+    move_num=0
+
     # visited array
     closed = np.zeros(snakes_grid.shape, dtype=np.int)
     closed[my_head_y, my_head_x] = 1
@@ -93,10 +95,9 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid, check_path=False):
                 #print(f'first expand\ny: {y}, x: {x}\n{expand}')
             count += 1
 
-
             if y == goal_y and x == goal_x:
                 found = True
-                expand[y,x] = -99
+                #expand[y,x] = -99
                 if check_path:
                     #print(f'checkpath expand\n{expand}')
                     return found
@@ -119,12 +120,6 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid, check_path=False):
                             open_arr.append([f2, g2, new_y, new_x])
                             closed[new_y, new_x] = 1
 
-                        if check_path:
-                            if (new_y==goal_y and new_x==goal_x):
-                                expand[y, x] = -99
-                                #print(f'checkpath expand\n{expand}')
-                                return found
-
     # found goal or resigned
     if found:
         move_num = 0
@@ -132,34 +127,39 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid, check_path=False):
         # todo: can work backwards from where expand is >0 and compare to
         # todo: start y and x and find move to get there
         found_path = False
-        #move_set = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+
         for i in range(len(delta)):
             next_y = my_head_y + delta[i][0]
             next_x = my_head_x + delta[i][1]
             if 0 <= next_y < expand.shape[0] and \
                     0 <= next_x < expand.shape[1]:
-                if expand[next_y, next_x]>-1:
-                    curr_val = expand[next_y, next_x]
-                    # check four connected for a pos int
-                    for j in range(len(delta)):
-                        n_next_y = next_y + delta[j][0]
-                        n_next_x = next_x + delta[j][1]
-                        if 0 <= n_next_y < expand.shape[0] and \
-                                0 <= n_next_x < expand.shape[1]:
-                            if snakes_grid[n_next_y, n_next_x]==0 or\
-                                    snakes_grid[n_next_y,n_next_x]\
-                                        == next_smhead_val:
-                                move_num = i
-                                my_move = delta_name[i]
-                                found_path=True
-                                break
+                if expand[next_y, next_x]>0:
+                    if snakes_grid[next_y, next_x] == 0 or \
+                            snakes_grid[next_y, next_x] == next_smhead_val:
+
+                        # check four connected for a pos int
+                        for j in range(len(delta)):
+                            n_next_y = next_y + delta[j][0]
+                            n_next_x = next_x + delta[j][1]
+                            if 0 <= n_next_y < expand.shape[0] and \
+                                    0 <= n_next_x < expand.shape[1]:
+                                if expand[next_y, next_x] > 0:
+                                    if snakes_grid[n_next_y, n_next_x]==0 or\
+                                            snakes_grid[n_next_y,n_next_x]\
+                                                == next_smhead_val:
+                                        move_num = i
+                                        my_move = delta_name[i]
+                                        found_path=True
+                                        break
+
             if found_path:
                 break
 
     else:
         move_num = 0
-        my_move = 'up'
+        my_move = 'snakeshit'
     #print(f'expand:\n{expand}')
+
     return move_num, my_move, found
 
 
@@ -171,10 +171,9 @@ def fill_food_arr(food, my_head_y, my_head_x):
                               [food[z]['y'], food[z]['x']])
         food_arr.append([food_dist, food[z]['y'], food[z]['x']])
 
-
-    food_arr = sorted(food_arr, key=lambda x: x[0])
+    food_array = sorted(food_arr, key=lambda x: x[0])
     # print(f'\n\nfood arr {food_arr}\n\n')
-    return food_arr
+    return food_array
 
 def mark_next_heads(head_y, head_x, snakes_grid,next_head_val):
     '''
@@ -270,22 +269,65 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
 
     return snakes_grid, solo_grid, snake_heads, snake_tails
 
-#todo: maybe just need to chase food I'm closer than other snakes?
-def calc_max_dist_for_food(my_health, width, factor=3):
-    # make it inverse to health
-    max_dist_for_food = width*2
-    if my_health > 90:
-        max_dist_for_food = factor
-    elif my_health > 75:
-        max_dist_for_food = factor + 2
-    elif my_health > 50:
-        max_dist_for_food = factor *1.5
-    elif my_health >40:
-        max_dist_for_food = width*1.8
-    else:
-        max_dist_for_food = width*3
+def check_path_to_tail(head_y, head_x, move_num, snakes_grid, snake_tails):
+    found_path=False
+    new_head_y = head_y + delta[move_num][0]
+    new_head_x = head_x + delta[move_num][1]
+    if 0 <= new_head_y < snakes_grid.shape[0] and \
+            0 <= new_head_x < snakes_grid.shape[1]:
+        # check that we can reach a tail
+        for q in range(len(snake_tails)):
+            found_path = search(snake_tails[q][0],
+                                snake_tails[q][1], new_head_y,
+                                new_head_x, snakes_grid, check_path=True)
 
-    return max_dist_for_food
+            if found_path:
+                break
+    return found_path
+
+def find_free_spaces(snakes_grid, head_y, head_x):
+    free_spaces = np.argwhere(snakes_grid==0)
+    free_spaces_arr = []
+    for i in range(free_spaces.shape[0]):
+        curr_free = free_spaces[i,:].tolist()
+        dist_to_free = heuristic([head_y, head_x], curr_free)
+        free_spaces_arr.append([dist_to_free, curr_free[0], curr_free[1]])
+
+    free_arr = sorted(free_spaces_arr, key=lambda x: x[0])
+    return free_arr
+
+def get_away_walls(my_head_y, my_head_x,
+                                    snakes_grid,solo_grid,snake_tails):
+    path_found = False
+    adjust_y = False
+    adjust_x = False
+    move_num = 0
+    my_move = ''
+    count = 0
+    free_spaces_arr = find_free_spaces(snakes_grid, my_head_y, my_head_x)
+    free_arr = free_spaces_arr[::-1]
+
+    while not path_found and count < len(free_arr):
+        free_space = free_arr[count]
+        goal_y = free_space[1]
+        goal_x = free_space[2]
+
+        move_num, my_move, path_found = search(goal_y,goal_x, my_head_y,
+                                               my_head_x, snakes_grid)
+        # todo: check path out to own tail, don't trap myself
+        if path_found and my_move != "snakeshit":
+            found_tail = check_path_to_tail(my_head_y, my_head_x,
+                                move_num, solo_grid, snake_tails)
+            if found_tail:
+                break
+            else:
+                path_found=False
+
+
+        count+=1
+
+    return my_move, path_found
+
 
 @bottle.post("/move")
 def move():
@@ -315,49 +357,85 @@ def move():
     snakes = data['board']['snakes']
     me = data['you']
     #print(f'me\n{me}')
-    my_head_y = data['you']['body'][0]['y']
-    my_head_x = data['you']['body'][0]['x']
+    my_head_y = me['body'][0]['y']
+    my_head_x = me['body'][0]['x']
 
-    my_tail_y = data['you']['body'][-1]['y']
-    my_tail_x = data['you']['body'][-1]['x']
+    my_tail_y = me['body'][-1]['y']
+    my_tail_x = me['body'][-1]['x']
 
-    next_tail_y = data['you']['body'][-2]['y']
-    next_tail_x = data['you']['body'][-2]['x']
+    next_tail_y = me['body'][-2]['y']
+    next_tail_x = me['body'][-2]['x']
+    # means we just ate food so grew
+    if my_tail_y==next_tail_y and my_tail_x==next_tail_x:
+        next_tail_y = me['body'][-3]['y']
+        next_tail_x = me['body'][-3]['x']
+
     #print(f'tail yx = {my_tail_y},{my_tail_x}\n'
      #     f'nexttail_yx: {next_tail_y},{next_tail_x}')
-    my_id = data['you']['id']
+    my_id = me['id']
 
     # for comparison with opponent's snakes
-    my_body_len = len(data['you']['body'])
-    me_longest = False
-    for i in range(len(snakes)):
-        if len(snakes[i]['body'])<=my_body_len:
-            me_longest=True
-        else:
-            me_longest=False
-            break
+    my_body_len = len(me['body'])
+    attack = False
+    # todo: if longest, start moving towards next_smhead_val on snakes grid
     # my health
-    my_health = data['you']['health']
-    max_dist_for_food = calc_max_dist_for_food(my_health, width, factor=width)
-    '''
-    if not me_longest:
-        # calculate max distance we go for food
-        max_dist_for_food = calc_max_dist_for_food(my_health, width, factor=width)
-    elif me_longest and my_health < 60:
-        max_dist_for_food = calc_max_dist_for_food(my_health, width, factor=width/1.5)
-    else:
-        max_dist_for_food = calc_max_dist_for_food(my_health, width, factor=width/2)
-    '''
+    my_health = me['health']
+    if my_health > 30:
+        for i in range(len(snakes)):
+            if len(snakes[i]['body'])<my_body_len:
+                attack=True
+            else:
+                attack=False
+                break
+
+    max_dist_for_food = width+height
+    #calc_max_dist_for_food(my_health, width, factor=width)
+
     # flags
     path_found = False
 
-    # todo: debugging
+    # debugging
     which_move = ''
     my_move = ''
 
     # make snakes_grid
     snakes_grid, solo_grid, snake_heads, snake_tails = \
         fill_snakes_grid(snakes, width, height, my_body_len, my_id)
+
+    # find empty spaces
+    #free_grid = find_free_land(snakes_grid)
+
+    # leave walls asap
+    leave_walls=False
+
+    if (my_head_x==0 or my_head_x==(snakes_grid.shape[1]-1) or
+            my_head_y==0 or my_head_y==(snakes_grid.shape[0]-1)) and\
+            my_health > width + height:
+        leave_walls=True
+        my_move, path_found = get_away_walls(my_head_y, my_head_x,
+                                 snakes_grid,solo_grid, snake_tails)
+        if path_found and my_move!='snakeshit':
+            which_move = 'get away walls'
+        else:
+            leave_walls=False
+            path_found = False
+
+    # if me_longest, chase 8s
+    if attack and not leave_walls:
+
+        targets = np.argwhere(snakes_grid==8)
+        for i in range(targets.shape[0]):
+            victim = targets[i,:]
+            move_num, my_move, path_found = \
+                search(victim[0], victim[1], my_head_y,my_head_x, snakes_grid)
+            if path_found and my_move != 'snakeshit':
+                found_tail = check_path_to_tail(my_head_y, my_head_x, move_num,
+                                                solo_grid, snake_tails)
+                if found_tail:
+                    which_move = 'hunting'
+                else:
+                    path_found = False
+
 
     # list of dicts of food locations
     food = data['board']['food']
@@ -369,75 +447,116 @@ def move():
     # there is a food so A star for route to food using snake grid for g
     food_count = 0
 
-    get_food=False
     found_path = False
-    if not path_found:
-        for q in range(len(food_arr)):
+    #get food
+    eating = False
+    count=0
+    closer=False
+    if not path_found and not leave_walls and not attack:
+        while not eating and count < len(food_arr):
             # todo: go after food within dist and I'm closer
-            if food_arr[q][0] <= max_dist_for_food:
-                '''
-                # iterate snakeheads
-                for r in range(len(snake_heads)):
-                    # small head 1, big head 5
-                    if snake_heads[r][0]==big_head_val:
-                        # if other snakes farther get food
-                        #todo: I'm closer or also equal?
-                        if heuristic([my_head_y, my_head_x],
-                                 [food_arr[q][1], food_arr[q][2]])\
-                                    < heuristic(snake_heads[r], [food_arr[q][1],
-                                                                 food_arr[q][2]]):
-                            get_food=True
-                        else:
-                            get_food=False
-                            break
-                '''
-                get_food=True
-                food_count += 1
-                if get_food:
-                    # goal y and x
-                    move_num, my_move, path_found = \
-                        search(food_arr[q][1], food_arr[q][2], my_head_y,
-                                                 my_head_x, snakes_grid)
-                    if my_health<70 and path_found:
-                        which_move = 'fast food'
-                        break
-                    # todo: check path out to own tail, don't trap myself
-                    new_head_y = my_head_y + delta[move_num][0]
-                    new_head_x = my_head_x + delta[move_num][1]
+            curr_food = food_arr[count]
+            #if curr_food[0] <= max_dist_for_food:
+            food_y = curr_food[1]
+            food_x = curr_food[2]
+            food_count += 1
+            # only go for food I'm closer than other snakes
+            for i in range(len(snake_heads)):
+                if heuristic([my_head_y, my_head_x], [food_y,food_x])\
+                        < heuristic(snake_heads[i], [food_y, food_x]):
+                    closer = True
+                else:
+                    closer= False
+                    break
 
-                    if 0<=new_head_y<snakes_grid.shape[0] and \
-                            0<=new_head_x<snakes_grid.shape[1]:
-                        # check that we can reach a tail
-                        for q in range(len(snake_tails)):
-                            found_path = search(snake_tails[q][0],
-                                                snake_tails[q][1], new_head_y,
-                                         new_head_x, snakes_grid, check_path=True)
 
-                    if found_path:
-                        which_move = 'food near'
-                        #print(f'my_move: {my_move}')
-                        break
+            if closer:
+                move_num, my_move, path_found = \
+                        search(food_y, food_x, my_head_y,my_head_x, snakes_grid)
+
+                # todo: check path out to own tail, don't trap myself
+                if path_found and my_move!='snakeshit':
+
+                    found_tail = check_path_to_tail(my_head_y, my_head_x, move_num,
+                                                 solo_grid, snake_tails)
+                    if found_tail:
+                        which_move = 'get food'
+                        eating=True
+                    else:
+                        path_found=False
+
+            count+=1
 
     # shorten food_arr
     food_arr = food_arr[food_count:]
-
+    count=0
     #chase my tail
-    if not path_found:
+    if not path_found and not leave_walls and not attack:
         # chase tail if nothing in food_arr
         move_num, my_move, path_found = search(my_tail_y, my_tail_x, my_head_y,
                                      my_head_x, snakes_grid)
-        if path_found:
-            #print(f'my_move: {my_move}')
-            which_move = 'tail'
+        if path_found and my_move != 'snakeshit':
+            found_tail = check_path_to_tail(my_head_y, my_head_x, move_num,
+                                            solo_grid, snake_tails)
+            if found_tail:
+                which_move = 'my tail'
+            else:
+                path_found = False
+
+    # find the spot on the map that has most emtpy space
+    count = 0
+    #if not path_found and not leave_walls and not attack and my_health > 50:
+
+
+
+    '''
+        free_grid = find_free_land(snakes_grid)
+        most_free_y, most_free_x = np.where(free_grid == free_grid.min())
+        nearest = np.inf
+        while not path_found and count < most_free_y.shape[0]:
+            goal_y = most_free_y[count]
+            goal_x = most_free_x[count]
+            move_num, my_move, path_found = search(goal_y,
+                                                   goal_x, my_head_y,
+                                                   my_head_x, snakes_grid)
+
+            if path_found and my_move != 'snakeshit':
+                found_tail = check_path_to_tail(my_head_y, my_head_x,
+                                                move_num, solo_grid, snake_tails)
+                if found_tail:
+                    which_move = 'get free'
+                    break
+                else:
+                    path_found = False
+            count += 1
+    '''
+    count = 0
 
 
     # chase other snakes' tails
-    if not path_found:
+    if not path_found and not leave_walls:
         for q in range(len(snake_tails)):
             move_num, my_move, path_found = search(snake_tails[q][0], snake_tails[q][1],
                                          my_head_y,my_head_x,snakes_grid)
+            if path_found and my_move!= 'snakeshit':
+                new_head_y = my_head_y + delta[move_num][0]
+                new_head_x = my_head_x + delta[move_num][1]
+
+                if 0 <= new_head_y < snakes_grid.shape[0] and \
+                        0 <= new_head_x < snakes_grid.shape[1]:
+                    # check that we can reach a tail
+                    for q in range(len(snake_tails)):
+                        found_path = search(snake_tails[q][0],
+                                            snake_tails[q][1], new_head_y,
+                                            new_head_x, solo_grid, check_path=True)
+
+                        if found_path:
+
+                            # print(f'my_move: {my_move}')
+                            break
             if path_found:
-                which_move='other tail'
+                which_move = 'opponent tail'
+                break
 
     # chasing tail nor search for food worked
     if not path_found:
@@ -447,20 +566,15 @@ def move():
             if 0 <= next_y < snakes_grid.shape[0] and \
                     0 <= next_x < snakes_grid.shape[1]:
                 if snakes_grid[next_y, next_x]==0 or \
-                        snakes_grid[next_y, next_x]==next_smhead_val or \
-                        snakes_grid[next_y, next_x]==next_bighead_val:
-                    new_head_y = my_head_y + delta[t][0]
-                    new_head_x = my_head_x + delta[t][1]
-                    for q in range(len(snake_tails)):
-                        path_found = search(snake_tails[q][0], snake_tails[q][1],
-                                            new_head_y,new_head_x, snakes_grid,
-                                            check_path=True)
+                        snakes_grid[next_y, next_x]==next_smhead_val: #or \
 
-            if path_found:
-                my_move = delta_name[t]
-                #print(f'my_move: {my_move}')
-                which_move='last resort'
-                break
+                    my_move = delta_name[t]
+                    which_move = 'last resort'
+                    path_found=True
+                    #print(f'my_move: {my_move}')
+                    break
+
+
 
     # Shouts are messages sent to all the other snakes in the game.
     # Shouts are not displayed on the game board.
@@ -469,8 +583,8 @@ def move():
 
     response = {"move": my_move, "shout": shout}
     end = timer()
-    #print(f'\n\nturn: {turn}\ntime: {end-start}\nmy_move: {my_move}\n '
-     #     f'which_move: {which_move}\n\n')
+    print(f'\n\nturn: {turn}\ntime: {end-start}\nmy_move: {my_move}\n '
+         f'which_move: {which_move}\n\n')
     #print(f'snakes_grid\n {snakes_grid}\nsolo_grid\n {solo_grid}\n')
     return HTTPResponse(
         status=200,
@@ -478,8 +592,52 @@ def move():
         body=json.dumps(response),
     )
 
-def find_stretch_goal(width, height):
-    pass
+def find_free_land(snakes_grid):
+    '''
+    small_head_val = 1
+    my_head_val=3
+    big_head_val = 5
+    body_val = 4
+    my_body_val = 7
+    next_bighead_val = 9
+    next_smhead_val = 8
+    '''
+    # 4 for snake bodies
+    my_body = np.argwhere(snakes_grid==my_body_val)
+    opp_bodies = np.argwhere(snakes_grid==body_val)
+    # as is
+    big_heads = np.argwhere(snakes_grid==big_head_val)
+    small_heads = np.argwhere(snakes_grid==small_head_val)
+    my_head = np.argwhere(snakes_grid==my_head_val)
+    # as is
+    next_bheads = np.argwhere(snakes_grid==next_bighead_val)
+    # heuristic only
+    next_smhead = np.argwhere(snakes_grid==next_smhead_val)
+
+    total_grid = np.zeros(snakes_grid.shape, dtype=np.int)
+    for i in range(snakes_grid.shape[0]):
+        for j in range(snakes_grid.shape[1]):
+            for k in range(my_body.shape[0]):
+                total_grid[i,j] += int(4/heuristic(my_body[k,:], [i,j]))
+            for z in range(opp_bodies.shape[0]):
+                total_grid[i,j] += int(4/heuristic(opp_bodies[z,:], [i,j]))
+            for m in range(big_heads.shape[0]):
+                total_grid[i,j] += int(5/ heuristic(big_heads[m,:], [i,j]))
+                        #snakes_grid[big_heads[m,0], big_heads[m,1]]
+            for c in range(small_heads.shape[0]):
+                total_grid[i, j] += int(4/heuristic(small_heads[c,:], [i, j]))
+                                    #snakes_grid[small_heads[c, 0],
+                                     #           small_heads[c, 1]]
+            for n in range(next_bheads.shape[0]):
+                total_grid[i,j] += int(3/heuristic(next_bheads[n,:], [i,j]))
+                    #snakes_grid[next_bheads[n,0], next_bheads[n,1]]
+            for p in range(next_smhead.shape[0]):
+                total_grid[i, j] += int(1/heuristic(next_smhead[p,:], [i, j]))
+
+            total_grid[i,j] += 1/int(heuristic([my_head[0, 0], my_head[0,1]],
+                                                [i,j]))
+    return total_grid
+
 def heuristic(start_node, goal_node):
     start_x = start_node[1]
     start_y = start_node[0]

@@ -465,23 +465,30 @@ def move():
         while not eating and count < len(food_arr):
             #todo: tune the max body_len
             # if I"m long and healthy forget about food
+            '''
             if my_health>80 and my_body_len > (width + height) * 2:
                 max_dist_for_food=1
+            '''
             curr_food = food_arr[count]
             # todo: maybe fix this
+            '''
             if curr_food[0] > max_dist_for_food:
                 continue
+            '''
             food_y = curr_food[1]
             food_x = curr_food[2]
             # todo check if bigger snake within 3 of food
+            '''
             for i in range(len(snake_heads)):
                 snakehead = snake_heads[i]
                 if heuristic([food_y, food_x],snakehead) <=3:
                     too_dangerous=True
                     break
+                    
             if too_dangerous:
                 too_dangerous=False
                 continue
+            '''
             food_count += 1
             # only go for food I'm closer than other snakes
             if len(snakes)>1:

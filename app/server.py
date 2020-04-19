@@ -366,9 +366,6 @@ def move():
     my_tail_y = me['body'][-1]['y']
     my_tail_x = me['body'][-1]['x']
 
-    next_tail_y = me['body'][-2]['y']
-    next_tail_x = me['body'][-2]['x']
-
     #print(f'tail yx = {my_tail_y},{my_tail_x}\n'
      #     f'nexttail_yx: {next_tail_y},{next_tail_x}')
     my_id = me['id']
@@ -387,7 +384,7 @@ def move():
             attack=False
             break
 
-    max_dist_for_food = width+height
+    max_dist_for_food = (width+height) *2
 
     # flags
     path_found = False
@@ -468,7 +465,7 @@ def move():
         while not eating and count < len(food_arr):
             #todo: tune the max body_len
             # if I"m long and healthy forget about food
-            if my_health>80 and my_body_len > width:
+            if my_health>80 and my_body_len > (width + height) * 2:
                 max_dist_for_food=1
             curr_food = food_arr[count]
             # todo: maybe fix this

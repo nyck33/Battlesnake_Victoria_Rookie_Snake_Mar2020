@@ -344,6 +344,15 @@ def get_away_walls(my_head_y, my_head_x,snakes_grid, snake_tails):
 
         move_num, my_move, path_found = search(goal_y,goal_x, my_head_y,
                                                my_head_x, snakes_grid)
+        if path_found:
+            found_free = check_path_to_tail(my_head_y,my_head_x,move_num,
+                                            snakes_grid,
+                                            snake_tails)
+            if found_free:
+                break
+            else:
+                my_move='snakeshit'
+                path_found=False
 
         count+=1
     return my_move, path_found
@@ -389,12 +398,22 @@ def move():
     # my head and body locations
     snakes = data['board']['snakes']
     me = data['you']
+    # my health
+    my_health = me['health']
     #print(f'me\n{me}')
     my_head_y = me['body'][0]['y']
     my_head_x = me['body'][0]['x']
 
     my_tail_y = me['body'][-1]['y']
     my_tail_x = me['body'][-1]['x']
+
+    # find next tail
+    my_next_tail_y = me['body'][-2]['y']
+    my_next_tail_x = me['body'][-2]['x']
+    if my_health ==100 and turn!= 0:
+        my_next_tail_y = me['body'][-3]['y']
+        my_next_tail_x = me['body'][-3]['x']
+
 
     #print(f'tail yx = {my_tail_y},{my_tail_x}\n'
      #     f'nexttail_yx: {next_tail_y},{next_tail_x}')
@@ -431,8 +450,7 @@ def move():
     while not ready:
         attack = False
         # todo: if longest, start moving towards next_smhead_val on snakes grid
-        # my health
-        my_health = me['health']
+
 
         num_to_attack = 2
         if risky:
@@ -472,7 +490,8 @@ def move():
 
         if not attack:
             if (my_head_x==0 or my_head_x==(snakes_grid.shape[1]-1))or\
-                    (my_head_y==0 or my_head_y==(snakes_grid.shape[0]-1)):
+                    (my_head_y==0 or my_head_y==(snakes_grid.shape[0]-1)) and\
+                        my_health > 10:
 
                 my_move, path_found = get_away_walls(my_head_y, my_head_x,
                                          snakes_grid, snake_tails)

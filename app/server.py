@@ -31,7 +31,7 @@ next_smhead_val = 8
 
 next_heads = [next_smhead_val, next_samehead_val, next_bighead_val]
 curr_bodies = [small_head_val, my_head_val, same_head_val, big_head_val, body_val, my_body_val]
-
+next_ok_heads = [next_smhead_val, next_samehead_val]
 
 @bottle.route("/")
 def index():
@@ -131,7 +131,7 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid,
 
                         if closed[new_y, new_x] == 0 and \
                                 (snakes_grid[new_y, new_x] == 0 or
-                                 snakes_grid[new_y, new_x] in next_heads):
+                                 snakes_grid[new_y, new_x] in next_ok_heads):
                             # next_safeheads):
                             g2 = g + cost
                             f2 = g2 + heuristic_map[new_y, new_x]
@@ -356,6 +356,23 @@ def check_dist_to_snakes(snake_heads, head_y, head_x):
 
     return snake_arr
 
+def set_low_y_low_x(y,x, snakes_grid):
+    # find next possible head pos
+    low_y, low_x = y - 1, x - 1
+    # set at shape for slicing
+    high_y, high_x = y + 2, x + 2
+    # if in bounds not boundary
+    if y - 1 < 0:
+        low_y = 0
+    # if at shape that is too high
+    elif y+2 > snakes_grid.shape[0]:
+        high_y = snakes_grid.shape[0]
+    if x-1 < 0:
+        low_x = 0
+    elif x+2 > snakes_grid.shape[1]:
+        high_x = snakes_grid.shape[1]
+
+    return low_y, low_x, high_y, high_x
 
 @bottle.post("/move")
 def move():
@@ -437,12 +454,12 @@ def move():
         check_grid[next_tail_y, next_tail_x] = 0
     # todo: use this? get distances to snake heads
     # dists, snaketype, y, x
-    snake_dists = check_dist_to_snakes(snake_heads, my_head_y, my_head_x)
+    #snake_dists = check_dist_to_snakes(snake_heads, my_head_y, my_head_x)
 
     # find free spaces and dists
     # dist, freey, freex
     # check path to free only considers those beyond min_dist
-    free_spaces_arr = find_free_spaces(snakes_grid, my_head_y, my_head_x)
+    #free_spaces_arr = find_free_spaces(snakes_grid, my_head_y, my_head_x)
 
     if risky:
         snakes_grid[snakes_grid == next_samehead_val] = \

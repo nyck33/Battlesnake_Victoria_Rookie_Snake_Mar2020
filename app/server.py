@@ -548,6 +548,20 @@ def move():
             food_dist = curr_food[0]
             food_y = curr_food[1]
             food_x = curr_food[2]
+            #if food along the wall and big head or next bighead around it,
+            # pass
+            if food_y==0 or food_y==(snakes_grid.shape[0]-1) or food_x==0 or\
+                food_x ==(snakes_grid.shape[1]-1):
+
+                low_y, low_x, _, _ = \
+                    set_low_y_low_x(food_y-3, food_x-3, snakes_grid)
+                _,_, high_y, high_x = \
+                    set_low_y_low_x(food_y + 3, food_x + 3, snakes_grid)
+                if np.any((snakes_grid[low_y:high_y, low_x:high_x]==
+                           next_bighead_val) | (snakes_grid[low_y:high_y,
+                            low_x:high_x]==big_head_val)):
+                    count+=1
+                    continue
             food_count += 1
             if len(snakes) > 1:
                 for i in range(len(snake_heads)):

@@ -146,7 +146,7 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid,
                         if closed[new_y, new_x] == 0 and \
                                 (snakes_grid[new_y, new_x] == 0 or
                                  snakes_grid[new_y, new_x] % next_smhead_val == 0
-                                 or snakes_grid[new_y, new_x] == next_samehead_val or \
+                                 or snakes_grid[new_y, new_x] == next_samehead_val or
                                  snakes_grid[new_y, new_x] == next_bighead_val):
                             # next_safeheads):
                             g2 = g + cost

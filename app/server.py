@@ -30,6 +30,7 @@ next_samehead_val = 6
 next_smhead_val = 8
 
 next_heads = [next_smhead_val, next_samehead_val, next_bighead_val]
+curr_bodies = [small_head_val, my_head_val, same_head_val, big_head_val, body_val, my_body_val]
 
 
 @bottle.route("/")
@@ -223,8 +224,8 @@ def mark_next_heads(head_y, head_x, snakes_grid, next_head_val):
         # if in bounds and space is free, fill with 9
         if 0 <= next_head_y < snakes_grid.shape[0] \
                 and 0 <= next_head_x < snakes_grid.shape[1]:
-            if new_grid[next_head_y, next_head_x] == 0:
-                new_grid[next_head_y, next_head_x] = next_head_val
+            if new_grid[next_head_y, next_head_x] not in curr_bodies:
+                new_grid[next_head_y, next_head_x] += next_head_val
 
     return new_grid
 
@@ -270,26 +271,19 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
                     snakes_grid[head_y, head_x] = small_head_val
                     # append to heads list
                     snake_heads.append([small_head_val, head_y, head_x])
-                    # mark smaller next heads as 8
-                    snakes_grid = mark_next_heads(head_y, head_x,
-                                                  snakes_grid, next_smhead_val)
+
                 # if it's the heads of bigger or equal snakes
                 elif len(curr_snake['body']) > my_body_len and not my_snake:
                     snakes_grid[head_y, head_x] = big_head_val
                     # append to heads list
                     snake_heads.append([big_head_val, head_y, head_x])
-                    # mark bigger or equal next heads as 9
-                    snakes_grid = mark_next_heads(head_y,
-                                                  head_x, snakes_grid, next_bighead_val)
+
                 # todo: equal size
                 elif len(curr_snake['body']) == my_body_len and not my_snake:
                     snakes_grid[head_y, head_x] = same_head_val
                     # todo: append to heads list or not?
                     snake_heads.append([same_head_val, head_y, head_x])
-                    # mark bigger or equal next heads as 9
-                    snakes_grid = mark_next_heads(head_y,
-                                                  head_x, snakes_grid,
-                                                  next_samehead_val)
+
                 # fill solo grid for crash check
                 elif len(curr_snake['body']) == my_body_len and my_snake:
                     solo_grid[head_y, head_x] = my_head_val
@@ -309,10 +303,19 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
             elif k == (len(curr_snake['body']) - 1):
                 body_y = curr_snake['body'][k]['y']
                 body_x = curr_snake['body'][k]['x']
-                solo_grid[body_y, body_x] = my_body_val
-                snake_tails.append([body_y, body_x])
+
                 if curr_snake['health'] == 100:
                     snakes_grid[body_y, body_x] = body_val
+                else:
+                    solo_grid[body_y, body_x] = my_body_val
+                    snake_tails.append([body_y, body_x])
+        # mark next heads after bodies filled
+        for i in range(len(snake_heads)):
+            curr_head = snake_heads[i]
+            curr_next_val = curr_head[0]
+            curr_y = curr_head[1]
+            curr_x = curr_head[2]
+            snakes_grid = mark_next_heads(curr_y, curr_x, snakes_grid, curr_next_val)
 
     return snakes_grid, solo_grid, snake_heads, snake_tails
 

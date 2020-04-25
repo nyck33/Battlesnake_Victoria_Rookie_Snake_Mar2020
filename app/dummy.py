@@ -183,44 +183,7 @@ def search(goal_y, goal_x, my_head_y, my_head_x, snakes_grid,
         move_num = moves_seq[0]
         my_move = delta_name[move_num]
 
-        '''
-        move_num = 0
-        next_spot = 0
-        n_next_spot = 0
-        # todo: can work backwards from where expand is >0 and compare to
-        # todo: start y and x and find move to get there
-        found_path = False
-        for i in range(len(delta)):
-            next_y = my_head_y + delta[i][0]
-            next_x = my_head_x + delta[i][1]
-            if 0 <= next_y < expand.shape[0] and \
-                    0 <= next_x < expand.shape[1]:
-                if expand[next_y, next_x]>0:
-                    next_spot = expand[next_y, next_x]
-                    # check four connected for a pos int
-                    for j in range(len(delta)):
-                        n_next_y = next_y + delta[j][0]
-                        n_next_x = next_x + delta[j][1]
-                        if 0 <= n_next_y < expand.shape[0] and \
-                                0 <= n_next_x < expand.shape[1]:
-                            
-                            if expand[n_next_y, n_next_x] > 0:
-                                n_next_spot = expand[n_next_y, n_next_x]
-                            
-                            if check_grid[n_next_y, n_next_x] == 0 or\
-                                check_grid[n_next_y, n_next_x] in \
-                                    next_heads:
-                                n_next_spot = expand[n_next_y, n_next_x]
-                                move_num = i
-                                my_move = delta_name[i]
-                                found_path=True
-                                break
 
-            if found_path:
-                #print(f'next: {next_spot}\n n_next: {n_next_spot}\n \
-                                    expand\n{expand}')
-                break
-        '''
     elif check_path:
         ##print(f'check expand:\n {expand}')
         return found
@@ -246,7 +209,7 @@ def fill_food_arr(food, my_head_y, my_head_x):
     # #print(f'\n\nfood arr {food_arr}\n\n')
     return food_array
 
-def mark_next_heads(head_y, head_x, snakes_grid,next_head_val):
+def mark_next_heads(head_y, head_x, snakes_grid, next_head_val):
     '''
     delta = [[-1, 0],  # go up
              [0, -1],  # go left
@@ -260,22 +223,24 @@ def mark_next_heads(head_y, head_x, snakes_grid,next_head_val):
         # if in bounds and space is free, fill with 9
         if 0 <= next_head_y < snakes_grid.shape[0] \
                 and 0 <= next_head_x < snakes_grid.shape[1]:
-            if new_grid[next_head_y, next_head_x]==0:
-                new_grid[next_head_y, next_head_x] = next_head_val
+            if snakes_grid[next_head_y, next_head_x] != body_val:
+                new_grid[next_head_y, next_head_x] += next_head_val
 
     return new_grid
+
 
 def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
     '''
     small_head_val = 1
-    same_head_val=2
-    my_head_val = 3
-    big_head_val = 5
-    body_val = 4
-    my_body_val = 7
+    same_head_val = 1
+    my_head_val = 1
+    big_head_val = 1
+    body_val = 1
+    my_body_val = 1
+    #todo: for hunting need to label next_smhead_val =
+    next_smhead_val = 2
+    next_samehead_val = 5
     next_bighead_val = 9
-    next_samehead_val = 6
-    next_smhead_val = 8
     '''
     # my_moves
     delta = [[-1, 0],  # go up
@@ -292,10 +257,10 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
     for j in range(len(snakes)):
         curr_snake = snakes[j]
         if curr_snake['id'] == my_id:
-            my_snake=True
+            my_snake = True
         else:
-            my_snake=False
-        # fill grid
+            my_snake = False
+        # fill grid with bodies
         for k in range(len(curr_snake['body'])):
             # heads of opp snakes
             if k == 0:
@@ -303,55 +268,55 @@ def fill_snakes_grid(snakes, width, height, my_body_len, my_id):
                 head_x = curr_snake['body'][k]['x']
                 # if smaller
                 if len(curr_snake['body']) < my_body_len and not my_snake:
-                    snakes_grid[head_y, head_x]= small_head_val
+                    snakes_grid[head_y, head_x] += small_head_val
                     # append to heads list
-                    snake_heads.append([small_head_val, head_y, head_x])
-                    # mark smaller next heads as 8
-                    snakes_grid = mark_next_heads(head_y, head_x,
-                                            snakes_grid, next_smhead_val)
+                    snake_heads.append([next_smhead_val, head_y, head_x])
+
                 # if it's the heads of bigger or equal snakes
                 elif len(curr_snake['body']) > my_body_len and not my_snake:
-                    snakes_grid[head_y,head_x]= big_head_val
+                    snakes_grid[head_y, head_x] += big_head_val
                     # append to heads list
-                    snake_heads.append([big_head_val, head_y, head_x])
-                    # mark bigger or equal next heads as 9
-                    snakes_grid = mark_next_heads(head_y,
-                                    head_x,snakes_grid,next_bighead_val)
+                    snake_heads.append([next_bighead_val, head_y, head_x])
+
                 # todo: equal size
-                elif len(curr_snake['body'])==my_body_len and not my_snake:
-                    snakes_grid[head_y, head_x] = same_head_val
+                elif len(curr_snake['body']) == my_body_len and not my_snake:
+                    snakes_grid[head_y, head_x] += same_head_val
                     # todo: append to heads list or not?
-                    snake_heads.append([same_head_val, head_y, head_x])
-                    # mark bigger or equal next heads as 9
-                    snakes_grid = mark_next_heads(head_y,
-                                                  head_x, snakes_grid,
-                                                  next_samehead_val)
-                #fill solo grid for crash check
+                    snake_heads.append([next_samehead_val, head_y, head_x])
+
+                # fill solo grid for crash check
                 elif len(curr_snake['body']) == my_body_len and my_snake:
-                    solo_grid[head_y, head_x] = my_head_val
-                    snakes_grid[head_y, head_x] = my_head_val
+                    solo_grid[head_y, head_x] += my_head_val
+                    snakes_grid[head_y, head_x] += my_head_val
             # all snakes body and my head and body except tail
-            elif 0 < k < (len(curr_snake['body'])-1):
+            elif 0 < k < (len(curr_snake['body']) - 1):
                 body_y = curr_snake['body'][k]['y']
                 body_x = curr_snake['body'][k]['x']
                 #
                 if not my_snake:
-                    snakes_grid[body_y,body_x] = body_val
+                    snakes_grid[body_y, body_x] += body_val
                 # fill solo grid
                 elif my_snake:
-                    snakes_grid[body_y, body_x] = my_body_val
-                    solo_grid[body_y, body_x] = body_val
+                    snakes_grid[body_y, body_x] += my_body_val
+                    solo_grid[body_y, body_x] += body_val
             # tails
-            elif k==(len(curr_snake['body'])-1):
+            elif k == (len(curr_snake['body']) - 1):
                 body_y = curr_snake['body'][k]['y']
                 body_x = curr_snake['body'][k]['x']
-                solo_grid[body_y, body_x] = my_body_val
-                snake_tails.append([body_y,body_x])
-                if curr_snake['health']==100:
-                    snakes_grid[body_y, body_x]=body_val
+                solo_grid[body_y, body_x] += my_body_val
+                snake_tails.append([body_y, body_x])
+                if curr_snake['health'] == 100:
+                    snakes_grid[body_y, body_x] += body_val
+
+    # mark next heads after bodies filled
+    for i in range(len(snake_heads)):
+        curr_head = snake_heads[i]
+        curr_nextval = curr_head[0]
+        curr_y = curr_head[1]
+        curr_x = curr_head[2]
+        snakes_grid = mark_next_heads(curr_y, curr_x, snakes_grid, curr_nextval)
 
     return snakes_grid, solo_grid, snake_heads, snake_tails
-
 
 def check_path_to_tail(head_y, head_x, move_num, snakes_grid, check_grid,
                        snake_tails):

@@ -327,20 +327,55 @@ def check_path_to_tail(snakes, head_y, head_x, move_num, snakes_grid, check_grid
     new_head_x = head_x + delta[move_num][1]
     if 0 <= new_head_y < snakes_grid.shape[0] and \
             0 <= new_head_x < snakes_grid.shape[1]:
-        # check that we can reach a tail
-        for q in range(len(snake_tails)):
-            tail_y = snake_tails[q][0]
-            tail_x = snake_tails[q][1]
-            snakes_grid[tail_y, tail_x] = 0
-            found_path = search(tail_y, tail_x, new_head_y,
-                                new_head_x, snakes_grid, check_grid,
-                                check_path=True)
+        if len(snakes)>1:
+            for i in range(len(snakes)):
+                snake = snakes[i]
+                if snake['health']==100 and len(snakes) > 1:
+                    continue
+
+                else:
+                    tail_y = snake['body'][-1]['y']
+                    tail_x = snake['body'][-1]['x']
+                    # zero out tail just in case
+                    snakes_grid[tail_y, tail_x] = 0
+                    found_path = search(tail_y, tail_x, new_head_y,
+                                        new_head_x, snakes_grid, check_grid,
+                                        check_path=True)
+
+        elif len(snakes) ==1:
+            snake = snakes[0]
+            tail_y = snake['body'][-1]['y']
+            tail_x = snake['body'][-1]['x']
+            if snakes_grid[new_head_y, new_head_x]== my_body_val or\
+                snakes_grid[new_head_y, new_head_x]== body_val:
+
+            if snake['health']==100:
+            free_spaces = find_free_spaces(snakes_grid, head_y, head_x)
+            free = free_spaces[::-1]
+            for j in range(len(free)):
+                free_y = free[j][1]
+                free_x = free[j][2]
+
+                found_free = check_path_to_tail(snakes, )
+
 
             if found_path:
                 break
             else:
                 found_path = False
-                # print('check tail fail')
+
+
+
+
+
+
+
+
+        # check that we can reach a tail
+        for q in range(len(snake_tails)):
+            tail_y = snake_tails[q][0]
+            tail_x = snake_tails[q][1]
+
     return found_path
 
 
@@ -502,7 +537,7 @@ def move():
                        snakes_grid)
             if path_found and my_move != 'snakeshit':
 
-                found_free = check_path_to_tail(my_head_y, my_head_x,
+                found_free = check_path_to_tail(snakes, my_head_y, my_head_x,
                                                 move_num, snakes_grid,
                                                 check_grid,
                                                 snake_tails)
@@ -562,7 +597,7 @@ def move():
                            snakes_grid, check_grid)
                 if path_found:
 
-                    found_free = check_path_to_tail(my_head_y, my_head_x,
+                    found_free = check_path_to_tail(snakes, my_head_y, my_head_x,
                                                     move_num, snakes_grid,
                                                     check_grid,
                                                     snake_tails)
@@ -592,7 +627,7 @@ def move():
             found_free = check_path_to_free(my_head_y, my_head_x,
                                 move_num, snakes_grid, free_spaces_arr)
             '''
-            found_free = check_path_to_tail(my_head_y, my_head_x,
+            found_free = check_path_to_tail(snakes, my_head_y, my_head_x,
                                             move_num, snakes_grid,
                                             check_grid, snake_tails)
             if found_free:
@@ -616,7 +651,7 @@ def move():
                 found_free = check_path_to_free(my_head_y, my_head_x,
                                                 move_num, snakes_grid, free_spaces_arr)
                 '''
-                found_free = check_path_to_tail(my_head_y, my_head_x,
+                found_free = check_path_to_tail(snakes, my_head_y, my_head_x,
                                                 move_num, snakes_grid,
                                                 check_grid, snake_tails)
                 if found_free:

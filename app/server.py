@@ -344,8 +344,6 @@ def check_path_to_tail(snakes, head_y, head_x, move_num, snakes_grid, check_grid
     return found_path
 
 
-
-
 def check_dist_to_snakes(snake_heads, head_y, head_x):
     snake_dists = []
     for i in range(len(snake_heads)):
@@ -466,8 +464,6 @@ def move():
     attack = False
     # todo: if longest, start moving towards next_smhead_val on snakes grid
 
-
-
     # todo: on risky, could attack with more snakes left
     # attack when only one snake left
     if len(snakes) > 1:
@@ -502,7 +498,7 @@ def move():
                        snakes_grid)
             if path_found and my_move != 'snakeshit':
 
-                found_free = check_path_to_tail(my_head_y, my_head_x,
+                found_free = check_path_to_tail(snakes, my_head_y, my_head_x,
                                                 move_num, snakes_grid,
                                                 check_grid,
                                                 snake_tails)
@@ -562,7 +558,7 @@ def move():
                            snakes_grid, check_grid)
                 if path_found:
 
-                    found_free = check_path_to_tail(my_head_y, my_head_x,
+                    found_free = check_path_to_tail(snakes, my_head_y, my_head_x,
                                                     move_num, snakes_grid,
                                                     check_grid,
                                                     snake_tails)
@@ -592,7 +588,7 @@ def move():
             found_free = check_path_to_free(my_head_y, my_head_x,
                                 move_num, snakes_grid, free_spaces_arr)
             '''
-            found_free = check_path_to_tail(my_head_y, my_head_x,
+            found_free = check_path_to_tail(snakes, my_head_y, my_head_x,
                                             move_num, snakes_grid,
                                             check_grid, snake_tails)
             if found_free:
@@ -616,7 +612,7 @@ def move():
                 found_free = check_path_to_free(my_head_y, my_head_x,
                                                 move_num, snakes_grid, free_spaces_arr)
                 '''
-                found_free = check_path_to_tail(my_head_y, my_head_x,
+                found_free = check_path_to_tail(snakes,my_head_y, my_head_x,
                                                 move_num, snakes_grid,
                                                 check_grid, snake_tails)
                 if found_free:
@@ -693,23 +689,6 @@ def make_heuristic_map(goal, snakes_grid):
             dy = np.abs(i - goal_y)
             dx = np.abs(j - goal_x)
             heuristic_map[i, j] = dy + dx
-            '''
-            if snakes_grid[i,j] == next_bighead_val:
-                heuristic_map[i,j] += 10
-            elif snakes_grid[i,j] == next_samehead_val:
-                heuristic_map[i,j] += 5
-            for k in range(len(delta)):
-                four_connect_y = i + delta[k][0]
-                four_connect_x = j + delta[k][1]
-                if 0 <= four_connect_y < snakes_grid.shape[0] and \
-                        0 <= four_connect_x < snakes_grid.shape[1]:
-                    if snakes_grid[four_connect_y, four_connect_x] == next_bighead_val\
-                            or snakes_grid[four_connect_y, four_connect_x] == big_head_val:
-                        heuristic_map[i,j]+= 8
-                    elif snakes_grid[four_connect_y, four_connect_x] == next_samehead_val\
-                            or snakes_grid[four_connect_y, four_connect_x] == same_head_val:
-                        heuristic_map[i,j]+= 3
-            '''
 
     return heuristic_map
 

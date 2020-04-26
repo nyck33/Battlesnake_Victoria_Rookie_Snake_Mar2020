@@ -327,12 +327,12 @@ def check_path_to_tail(snakes, head_y, head_x, move_num, snakes_grid, check_grid
     new_head_x = head_x + delta[move_num][1]
     if 0 <= new_head_y < snakes_grid.shape[0] and \
             0 <= new_head_x < snakes_grid.shape[1]:
+        # not a solo game
         if len(snakes)>1:
             for i in range(len(snakes)):
                 snake = snakes[i]
                 if snake['health']==100 and len(snakes) > 1:
                     continue
-
                 else:
                     tail_y = snake['body'][-1]['y']
                     tail_x = snake['body'][-1]['x']
@@ -341,7 +341,7 @@ def check_path_to_tail(snakes, head_y, head_x, move_num, snakes_grid, check_grid
                     found_path = search(tail_y, tail_x, new_head_y,
                                         new_head_x, snakes_grid, check_grid,
                                         check_path=True)
-
+        # solo game
         elif len(snakes) ==1:
             snake = snakes[0]
             tail_y = snake['body'][-1]['y']
@@ -350,13 +350,13 @@ def check_path_to_tail(snakes, head_y, head_x, move_num, snakes_grid, check_grid
                 snakes_grid[new_head_y, new_head_x]== body_val:
 
             if snake['health']==100:
-            free_spaces = find_free_spaces(snakes_grid, head_y, head_x)
-            free = free_spaces[::-1]
-            for j in range(len(free)):
-                free_y = free[j][1]
-                free_x = free[j][2]
+                free_spaces = find_free_spaces(snakes_grid, head_y, head_x)
+                free = free_spaces[::-1]
+                for j in range(len(free)):
+                    free_y = free[j][1]
+                    free_x = free[j][2]
 
-                found_free = check_path_to_tail(snakes, )
+                    found_free = check_path_to_tail(snakes, )
 
 
             if found_path:
